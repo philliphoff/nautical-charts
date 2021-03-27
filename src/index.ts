@@ -5,9 +5,14 @@ const kapFileName = './samples/18400/18400_1.kap';
 
 const decoder = new TextDecoder();
 
+export interface KapRasterRow {
+    readonly rowNumber: number[];
+    readonly runs: number[][];
+}
+
 export interface KapChart {
     readonly textSection: string;
-    readonly binarySection: string;
+    readonly binarySection?: KapRasterRow[];
 }
 
 class KapStream {
@@ -40,9 +45,9 @@ function readChart(contents: Uint8Array): KapChart | undefined {
     let secondByte = stream.next();
 
     if (firstByte === undefined) {
-        return { textSection: '', binarySection: '' };
+        return { textSection: '' };
     } else if (secondByte === undefined) {
-        return { textSection: decoder.decode(Buffer.from([firstByte])), binarySection: '' }
+        return { textSection: decoder.decode(Buffer.from([firstByte])) }
     } else {
         while ((firstByte !== 0x1A || secondByte !== 0x00) && stream.hasNext) {
             firstByte = secondByte;
@@ -51,41 +56,34 @@ function readChart(contents: Uint8Array): KapChart | undefined {
 
         const textSection = decoder.decode(contents.slice(0, stream.position - 2));
 
-
         // Skip redundant image depth.
         // TODO: Verify match to text section.
         stream.next();
 
-        const rows = [];
+        const rows: KapRasterRow[] = [];
 
         while (stream.hasNext) {
-            const row = [];
+            const rowNumber = readRowNumber(stream);
 
-            row.push(readRowNumber(stream));
-
-            const start = stream.position;
-
-            const values = [];
+            const runs: number[][] = [];
 
             while (true) {
                 const value = readRowValue(stream);
 
                 if (value) {
-                    values.push(value);
+                    runs.push(value);
                 } else {
                     break;
                 }
             }
 
-            row.push(values);
-
-            rows.push(row);
+            rows.push({ rowNumber, runs });
         }
 
         // const binarySection =
         //     rows.map(row => row.map(n => n.toString(16)).join(' ')).join('\n');
 
-        return { textSection, binarySection: '' };
+        return { textSection, binarySection: rows };
     }
 }
 
@@ -130,12 +128,32 @@ function readRowValue(stream: KapStream): number[] | undefined {
     return [colorIndex, length];
 }
 
+function toHexString(binary: number[]): string {
+    return binary.map(
+        byte => {
+            const value = byte.toString(16).toUpperCase();
+
+            if (value.length === 1) {
+                return '0' + value;
+            } else {
+                return value;
+            }
+        }).join('');
+}
+
 async function go() {
     const kapBuffer = await fs.readFile(kapFileName);
 
     const kapChart = readChart(kapBuffer);
 
     console.log(kapChart?.textSection);
+
+    if (kapChart?.binarySection) {
+        kapChart.binarySection.forEach(
+            row => {
+                console.log(toHexString(row.rowNumber))
+            });
+    }
 }
 
 go();
