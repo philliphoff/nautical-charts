@@ -33,6 +33,10 @@ class KapStream {
         }
     }
 
+    peek(offset: number = 0): number {
+        return this.contents[this._index + offset];
+    }
+
     get position(): number {
         return this._index;
     }
@@ -58,17 +62,24 @@ function readChart(contents: Uint8Array): KapChart | undefined {
 
         // Skip redundant image depth.
         // TODO: Verify match to text section.
-        stream.next();
+        const bitField = stream.next();
 
         const rows: KapRasterRow[] = [];
 
-        while (stream.hasNext) {
-            const rowNumber = readRowNumber(stream);
+        const isEndOfRasterData =
+            () =>
+                stream.peek(0) === 0x00
+                && stream.peek(1) === 0x00
+                && stream.peek(2) === 0x00
+                && stream.peek(3) === 0x00;
+
+        while (stream.hasNext && !isEndOfRasterData()) {
+            const rowNumber = readVariableLengthValue(stream);
 
             const runs: number[][] = [];
 
-            while (true) {
-                const value = readRowValue(stream);
+            while (stream.hasNext && stream.peek(0) !== 0x00) {
+                const value = readVariableLengthValue(stream);
 
                 if (value) {
                     runs.push(value);
@@ -76,6 +87,8 @@ function readChart(contents: Uint8Array): KapChart | undefined {
                     break;
                 }
             }
+
+            stream.next();
 
             rows.push({ rowNumber, runs });
         }
@@ -87,45 +100,21 @@ function readChart(contents: Uint8Array): KapChart | undefined {
     }
 }
 
-function readRowNumber(stream: KapStream): number[] {
+function readVariableLengthValue(stream: KapStream): number[] {
     const row = [];
 
-    while (true) 
+    let current;
+
+    do
     {
-        const next = stream.next();
+        current = stream.next();
 
-        if (next !== undefined) {
-            row.push(next);
+        if (current !== undefined) {
+            row.push(current & 0x7F);
         }
-
-        if (next === undefined || next < 128) {
-            break;
-        }
-    }
+    } while (current !== undefined && current > 127);
 
     return row;
-}
-
-function readRowValue(stream: KapStream): number[] | undefined {
-    let colorIndex = stream.next();
-
-    if (colorIndex === undefined || colorIndex === 0x00) {
-        return undefined;
-    }
-
-    let length = 1;
-
-    if (colorIndex > 127) {
-        colorIndex = colorIndex & 0x7F;
-        
-        const next = stream.next();
-        
-        if (next !== undefined) {
-            length = next;
-        }
-    }
-
-    return [colorIndex, length];
 }
 
 function toHexString(binary: number[]): string {
@@ -138,7 +127,7 @@ function toHexString(binary: number[]): string {
             } else {
                 return value;
             }
-        }).join('');
+        }).join(' ');
 }
 
 async function go() {
