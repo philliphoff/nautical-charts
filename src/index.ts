@@ -5,9 +5,14 @@ const kapFileName = './samples/18400/18400_1.kap';
 
 const decoder = new TextDecoder();
 
+export interface KapRasterRun {
+    colorIndex: number;
+    length: number;
+}
+
 export interface KapRasterRow {
-    readonly rowNumber: number[];
-    readonly runs: number[][];
+    readonly rowNumber: number;
+    readonly runs: KapRasterRun[];
 }
 
 export interface KapChart {
@@ -74,18 +79,14 @@ function readChart(contents: Uint8Array): KapChart | undefined {
                 && stream.peek(3) === 0x00;
 
         while (stream.hasNext && !isEndOfRasterData()) {
-            const rowNumber = readVariableLengthValue(stream);
+            const rowNumber = readRowNumber(stream);
 
-            const runs: number[][] = [];
+            const runs: KapRasterRun[] = [];
 
             while (stream.hasNext && stream.peek(0) !== 0x00) {
-                const value = readVariableLengthValue(stream);
+                const value = readRasterRun(stream);
 
-                if (value) {
-                    runs.push(value);
-                } else {
-                    break;
-                }
+                runs.push(value);
             }
 
             stream.next();
@@ -117,6 +118,24 @@ function readVariableLengthValue(stream: KapStream): number[] {
     return row;
 }
 
+function readRowNumber(stream: KapStream): number {
+    const value = readVariableLengthValue(stream);
+
+    let number = 0;
+
+    for (let i = value.length - 1, pow = 0; i >= 0; i--, pow++) {
+        number += value[i] * Math.pow(128, pow);
+    }
+
+    return number;
+}
+
+function readRasterRun(stream: KapStream): KapRasterRun {
+    const value = readVariableLengthValue(stream);
+
+    return { colorIndex: 0, length: 0 };
+}
+
 function toHexString(binary: number[]): string {
     return binary.map(
         byte => {
@@ -140,7 +159,7 @@ async function go() {
     if (kapChart?.binarySection) {
         kapChart.binarySection.forEach(
             row => {
-                console.log(toHexString(row.rowNumber))
+                console.log(row.rowNumber);
             });
     }
 }
