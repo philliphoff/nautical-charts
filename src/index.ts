@@ -149,7 +149,27 @@ function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
     const value = readVariableLengthValue(stream);
     const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
 
-    return { colorIndex, length: 0 };
+    let lengthMask = 0;
+
+    // 0000 0111
+
+    for (let i = 0; i < 7 - bitDepth; i++) {
+        lengthMask += Math.pow(2, i);
+    }
+
+    let length = 1;
+
+    for (let i = value.length - 1, j = 0; i >= 0; i--, j++) {
+        let v = value[i];
+        
+        if (i === 0) {
+            v &= lengthMask;
+        }
+
+        length += v * Math.pow(128, j);
+    }
+
+    return { colorIndex, length };
 }
 
 function toHexString(binary: number[]): string {
@@ -165,6 +185,10 @@ function toHexString(binary: number[]): string {
         }).join(' ');
 }
 
+function printRun(run: KapRasterRun): string {
+    return `[${run.colorIndex} ${run.length}]`;
+}
+
 async function go() {
     const kapBuffer = await fs.readFile(kapFileName);
 
@@ -175,7 +199,7 @@ async function go() {
     if (kapChart?.binarySection) {
         kapChart.binarySection.forEach(
             row => {
-                console.log(`${row.rowNumber}: ${row.runs.map(run => run.colorIndex).join(' ')}`);
+                console.log(`${row.rowNumber}: ${row.runs.map(run => printRun(run)).join(' ')}`);
             });
     }
 }
