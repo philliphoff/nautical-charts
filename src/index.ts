@@ -67,7 +67,7 @@ function readChart(contents: Uint8Array): KapChart | undefined {
 
         // Skip redundant image depth.
         // TODO: Verify match to text section.
-        const bitField = stream.next();
+        const bitDepth = stream.next()!;
 
         const rows: KapRasterRow[] = [];
 
@@ -84,7 +84,7 @@ function readChart(contents: Uint8Array): KapChart | undefined {
             const runs: KapRasterRun[] = [];
 
             while (stream.hasNext && stream.peek(0) !== 0x00) {
-                const value = readRasterRun(stream);
+                const value = readRasterRun(stream, bitDepth);
 
                 runs.push(value);
             }
@@ -130,10 +130,26 @@ function readRowNumber(stream: KapStream): number {
     return number;
 }
 
-function readRasterRun(stream: KapStream): KapRasterRun {
-    const value = readVariableLengthValue(stream);
+function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
+    // 0000 1111
+    // 1000 0000 = 128
+    // 1100 0000
+    // 1110 0000
+    // 1111 0000
 
-    return { colorIndex: 0, length: 0 };
+    // 0111 1000
+    let colorIndexMask = 0;
+
+    for (let i = 0; i < bitDepth; i++) {
+        colorIndexMask += Math.pow(2, i);
+    }
+
+    colorIndexMask <<= (bitDepth - 1); 
+
+    const value = readVariableLengthValue(stream);
+    const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
+
+    return { colorIndex, length: 0 };
 }
 
 function toHexString(binary: number[]): string {
@@ -159,7 +175,7 @@ async function go() {
     if (kapChart?.binarySection) {
         kapChart.binarySection.forEach(
             row => {
-                console.log(row.rowNumber);
+                console.log(`${row.rowNumber}: ${row.runs.map(run => run.colorIndex).join(' ')}`);
             });
     }
 }
