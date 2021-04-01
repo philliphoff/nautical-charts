@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra';
-import { match } from 'node:assert';
+import { PNG } from 'pngjs';
 import { TextDecoder } from 'util';
 
 const kapFileName = './samples/18400/18400_1.kap';
@@ -17,7 +17,7 @@ export interface KapRasterRow {
 }
 
 export interface KapPalette {
-    [index: number]: number;
+    [index: number]: { r: number; g: number; b: number };
 }
 
 export interface KapMetadata {
@@ -91,9 +91,7 @@ function readChart(contents: Uint8Array): KapChart | undefined {
                 const g = parseInt(matches.groups!['g'], 10);
                 const b = parseInt(matches.groups!['b'], 10);
 
-                const rgb = (r << 16) | (g << 8) | b;
-
-                palette[index] = rgb;
+                palette[index] = { r, g, b };
             }
 
         } while (matches);
@@ -235,6 +233,40 @@ async function go() {
                 console.log(`${row.rowNumber}: ${row.runs.map(run => printRun(run)).join(' ')}`);
             });
     }
+
+    const width = 17080;
+    const height = 12316;
+
+    const png = new PNG({
+        colorType: 2, // RGB
+        height,
+        width
+    });
+
+    kapChart?.binarySection?.forEach(
+        row => {
+            // Row numbers are 1-based.
+            const y = row.rowNumber - 1;
+
+            let x = 0;
+
+            for (let run of row.runs) {
+                // TODO: Watch for undefined?
+                const rgb = kapChart!.metadata!.palette![run.colorIndex];
+
+                for (let i = 0; i < run.length; i++, x++) {
+                    const index = (y * width * 3) + (x * 3);
+
+                    png.data[index] = rgb.r;
+                    png.data[index + 1] = rgb.g;
+                    png.data[index + 2] = rgb.b;
+                }
+            }
+        });
+
+    const pngBuffer = PNG.sync.write(png);
+
+    await fs.writeFile('./samples/18400/18400_1.test.png', pngBuffer);
 }
 
 go();
