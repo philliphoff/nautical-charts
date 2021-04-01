@@ -1,4 +1,5 @@
 import * as fs from 'fs-extra';
+import { match } from 'node:assert';
 import { TextDecoder } from 'util';
 
 const kapFileName = './samples/18400/18400_1.kap';
@@ -15,9 +16,20 @@ export interface KapRasterRow {
     readonly runs: KapRasterRun[];
 }
 
+export interface KapPalette {
+    [index: number]: number;
+}
+
+export interface KapMetadata {
+    readonly palette?: KapPalette;
+}
+
 export interface KapChart {
-    readonly textSection: string;
     readonly binarySection?: KapRasterRow[];
+
+    readonly metadata?: KapMetadata;
+
+    readonly textSection?: string;
 }
 
 class KapStream {
@@ -65,6 +77,27 @@ function readChart(contents: Uint8Array): KapChart | undefined {
 
         const textSection = decoder.decode(contents.slice(0, stream.position - 2));
 
+        const regex = /RGB\/(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)\r\n/gm;
+        let matches: RegExpExecArray | null;
+        
+        const palette: KapPalette = {};
+
+        do {
+            matches = regex.exec(textSection);
+
+            if (matches) {
+                const index = parseInt(matches.groups!['index'], 10);
+                const r = parseInt(matches.groups!['r'], 10);
+                const g = parseInt(matches.groups!['g'], 10);
+                const b = parseInt(matches.groups!['b'], 10);
+
+                const rgb = (r << 16) | (g << 8) | b;
+
+                palette[index] = rgb;
+            }
+
+        } while (matches);
+
         // Skip redundant image depth.
         // TODO: Verify match to text section.
         const bitDepth = stream.next()!;
@@ -97,7 +130,7 @@ function readChart(contents: Uint8Array): KapChart | undefined {
         // const binarySection =
         //     rows.map(row => row.map(n => n.toString(16)).join(' ')).join('\n');
 
-        return { textSection, binarySection: rows };
+        return { metadata: { palette }, textSection, binarySection: rows };
     }
 }
 
