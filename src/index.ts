@@ -17,7 +17,7 @@ export interface KapRasterRow {
 }
 
 export interface KapPalette {
-    [index: number]: { r: number; g: number; b: number };
+    [index: number]: { r: number; g: number; b: number, a?: number };
 }
 
 export interface KapMetadata {
@@ -26,10 +26,10 @@ export interface KapMetadata {
 
 export interface KapChart {
     readonly binarySection?: KapRasterRow[];
-
+    
     readonly metadata?: KapMetadata;
-
-    readonly textSection?: string;
+    
+    readonly textSection?: KapMetadataEntry[];
 }
 
 class KapStream {
@@ -59,6 +59,48 @@ class KapStream {
     }
 }
 
+interface KapMetadataEntry {
+    entryType: string;
+    lines: string[];
+}
+
+function readEntries(textSegment: string): KapMetadataEntry[] {
+    const lines = textSegment.split('\r\n');
+
+    const entries: KapMetadataEntry[] = [];
+    
+    let currentEntry: KapMetadataEntry;
+
+    function startEntry(entry: KapMetadataEntry) {
+        entries.push(entry);
+
+        currentEntry = entry;
+    }
+
+    for (let line of lines) {
+        if (line.length === 0) {
+            continue;
+        } else if (line[0] === '!') {
+            startEntry({ entryType: '!', lines: [line.substr(1)] });
+        } else if (line.length >= 4 && line[0] === ' ' && line[1] === ' ' && line[2] === ' ' && line[3] === ' ') {
+            // TODO: Assert currentEntry !== undefined.
+            currentEntry!.lines.push(line.substr(4));
+        } else {
+            const entryTypeRegex = /^(?<entryType>[^\/]+)\//g.exec(line);
+
+            if (entryTypeRegex) {
+                const entryType = entryTypeRegex.groups!['entryType'];
+
+                startEntry({ entryType, lines: [line.substr(entryType.length + 1)] });
+            } else {
+                startEntry({ entryType: '<unknown>', lines: [line] });
+            }
+        }
+    }
+
+    return entries;
+}
+
 function readChart(contents: Uint8Array): KapChart | undefined {
     const stream = new KapStream(contents);
 
@@ -66,9 +108,9 @@ function readChart(contents: Uint8Array): KapChart | undefined {
     let secondByte = stream.next();
 
     if (firstByte === undefined) {
-        return { textSection: '' };
+        return { };
     } else if (secondByte === undefined) {
-        return { textSection: decoder.decode(Buffer.from([firstByte])) }
+        return { textSection: readEntries(decoder.decode(Buffer.from([firstByte]))) }
     } else {
         while ((firstByte !== 0x1A || secondByte !== 0x00) && stream.hasNext) {
             firstByte = secondByte;
@@ -77,24 +119,24 @@ function readChart(contents: Uint8Array): KapChart | undefined {
 
         const textSection = decoder.decode(contents.slice(0, stream.position - 2));
 
-        const regex = /RGB\/(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)\r\n/gm;
-        let matches: RegExpExecArray | null;
-        
+        const entries = readEntries(textSection);
+
         const palette: KapPalette = {};
 
-        do {
-            matches = regex.exec(textSection);
+        for (let rgbEntry of entries.filter(entry => entry.entryType === 'RGB')) {
+            const regex = /^(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)$/;
 
-            if (matches) {
-                const index = parseInt(matches.groups!['index'], 10);
-                const r = parseInt(matches.groups!['r'], 10);
-                const g = parseInt(matches.groups!['g'], 10);
-                const b = parseInt(matches.groups!['b'], 10);
+            const match = regex.exec(rgbEntry.lines[0]);
+            
+            if (match) {
+                const index = parseInt(match.groups!['index'], 10);
+                const r = parseInt(match.groups!['r'], 10);
+                const g = parseInt(match.groups!['g'], 10);
+                const b = parseInt(match.groups!['b'], 10);
 
                 palette[index] = { r, g, b };
             }
-
-        } while (matches);
+        }
 
         // Skip redundant image depth.
         // TODO: Verify match to text section.
@@ -125,10 +167,7 @@ function readChart(contents: Uint8Array): KapChart | undefined {
             rows.push({ rowNumber, runs });
         }
 
-        // const binarySection =
-        //     rows.map(row => row.map(n => n.toString(16)).join(' ')).join('\n');
-
-        return { metadata: { palette }, textSection, binarySection: rows };
+        return { metadata: { palette }, textSection: entries, binarySection: rows };
     }
 }
 
@@ -260,7 +299,7 @@ async function go() {
                     png.data[index] = rgb.r;
                     png.data[index + 1] = rgb.g;
                     png.data[index + 2] = rgb.b;
-                    png.data[index + 3] = 255; // Alpha
+                    png.data[index + 3] = rgb.a ?? 255;
                 }
             }
         });
