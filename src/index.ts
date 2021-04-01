@@ -255,11 +255,12 @@ async function go() {
                 const rgb = kapChart!.metadata!.palette![run.colorIndex];
 
                 for (let i = 0; i < run.length; i++, x++) {
-                    const index = (y * width * 3) + (x * 3);
+                    const index = (y * width * 4) + (x * 4);
 
                     png.data[index] = rgb.r;
                     png.data[index + 1] = rgb.g;
                     png.data[index + 2] = rgb.b;
+                    png.data[index + 3] = 255; // Alpha
                 }
             }
         });
