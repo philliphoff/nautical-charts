@@ -2,6 +2,7 @@ import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
 import { TextDecoder } from 'util';
 import { KapMetadata, parseMetadata } from './metadata';
+import KapStream from './stream';
 import { KapTextEntry, parseTextSegment } from './text';
 
 const kapFileName = './samples/18400/18400_1.kap';
@@ -26,86 +27,56 @@ export interface KapChart {
     readonly textSegment?: KapTextEntry[];
 }
 
-class KapStream {
-    private _index: number = 0;
-
-    constructor(private readonly contents: Uint8Array) {
-    }
-
-    get hasNext(): boolean {
-        return this._index < this.contents.length;
-    }
-
-    next(): number | undefined {
-        if (this.hasNext) {
-            return this.contents[this._index++];
-        } else {
-            return undefined;
-        }
-    }
-
-    peek(offset: number = 0): number {
-        return this.contents[this._index + offset];
-    }
-
-    get position(): number {
-        return this._index;
-    }
-}
-
 function readChart(contents: Uint8Array): KapChart | undefined {
     const stream = new KapStream(contents);
 
-    let firstByte = stream.next();
-    let secondByte = stream.next();
+    const textSegmentEndToken = [0x1A, 0x00];
+    const textSegmentBuffer = stream.readUntil(textSegmentEndToken, { consumeValues: true });
 
-    if (firstByte === undefined) {
-        return { };
-    } else if (secondByte === undefined) {
-        return { textSegment: parseTextSegment(decoder.decode(Buffer.from([firstByte]))) }
-    } else {
-        while ((firstByte !== 0x1A || secondByte !== 0x00) && stream.hasNext) {
-            firstByte = secondByte;
-            secondByte = stream.next();
-        }
+    let textSegment: KapTextEntry[] | undefined;
 
-        const textSection = decoder.decode(contents.slice(0, stream.position - 2));
-
-        const textSegment = parseTextSegment(textSection);
+    if (textSegmentBuffer) {
+        const textSection = decoder.decode(textSegmentBuffer);
         
-        const metadata = parseMetadata(textSegment);
+        textSegment = parseTextSegment(textSection);
+    }
 
-        // Skip redundant image depth.
-        // TODO: Verify match to text section.
-        const bitDepth = stream.next()!;
+    let metadata: KapMetadata | undefined;
 
-        const rows: KapRasterRow[] = [];
+    if (textSegment) {
+        metadata = parseMetadata(textSegment);
+    }
 
-        const isEndOfRasterData =
-            () =>
-                stream.peek(0) === 0x00
-                && stream.peek(1) === 0x00
-                && stream.peek(2) === 0x00
-                && stream.peek(3) === 0x00;
+    // Skip redundant image depth.
+    // TODO: Verify match to text section.
+    const bitDepth = stream.next()!;
 
-        while (stream.hasNext && !isEndOfRasterData()) {
-            const rowNumber = readRowNumber(stream);
+    const rows: KapRasterRow[] = [];
 
-            const runs: KapRasterRun[] = [];
+    const isEndOfRasterData =
+        () =>
+            stream.peek(0) === 0x00
+            && stream.peek(1) === 0x00
+            && stream.peek(2) === 0x00
+            && stream.peek(3) === 0x00;
 
-            while (stream.hasNext && stream.peek(0) !== 0x00) {
-                const value = readRasterRun(stream, bitDepth);
+    while (stream.hasNext && !isEndOfRasterData()) {
+        const rowNumber = readRowNumber(stream);
 
-                runs.push(value);
-            }
+        const runs: KapRasterRun[] = [];
 
-            stream.next();
+        while (stream.hasNext && stream.peek(0) !== 0x00) {
+            const value = readRasterRun(stream, bitDepth);
 
-            rows.push({ rowNumber, runs });
+            runs.push(value);
         }
 
-        return { metadata, textSegment, rasterSegment: rows };
+        stream.next();
+
+        rows.push({ rowNumber, runs });
     }
+
+    return { metadata, textSegment, rasterSegment: rows };
 }
 
 function readVariableLengthValue(stream: KapStream): number[] {
