@@ -81,8 +81,9 @@ async function go() {
             });
     }
 
-    const width = 17080;
-    const height = 12316;
+    // TODO: Infer dimensions if no metadata exists.
+    const height = kapChart!.metadata!.height!;
+    const width = kapChart!.metadata!.width!;
 
     const png = new PNG({
         colorType: 2, // RGB

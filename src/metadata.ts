@@ -5,7 +5,30 @@ export interface KapPalette {
 }
 
 export interface KapMetadata {
+    readonly height?: number;
     readonly palette?: KapPalette;
+    readonly width?: number;
+}
+
+function parseHeightAndWidth(textSegment: KapTextEntry[]): { height?: number, width?: number } {
+    const header = textSegment.find(entry => entry.entryType === 'BSB');
+
+    if (header) {
+        const regex = /RA=(?<width>\d+),(?<height>\d+)/;
+
+        for (let line of header.lines) {
+            const match = regex.exec(line);
+
+            if (match) {
+                return {
+                    height: parseInt(match.groups!['height'], 10),
+                    width: parseInt(match.groups!['width'], 10)
+                };
+            }
+        }
+    }
+
+    return {};
 }
 
 export function parseMetadata(textSegment: KapTextEntry[]): KapMetadata {
@@ -26,5 +49,11 @@ export function parseMetadata(textSegment: KapTextEntry[]): KapMetadata {
         }
     }
 
-    return { palette };
+    const { height, width } = parseHeightAndWidth(textSegment);
+
+    return {
+        height,
+        palette,
+        width
+    };
 }
