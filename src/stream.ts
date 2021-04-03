@@ -20,6 +20,20 @@ export default class KapStream {
         return this.contents[this._index + offset];
     }
 
+    isNext(values: number[]): boolean {
+        if (this._index + values.length > this.contents.length) {
+            return false;
+        }
+
+        for (let i = 0; i < values.length; i++) {
+            if (this.contents[this._index + i] !== values[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     indexOf(values: number[]): number | undefined {
         for (let indexOfValues = this._index; indexOfValues < this.contents.length - values.length; indexOfValues++) {
             let i = 0;

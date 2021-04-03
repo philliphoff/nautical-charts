@@ -53,14 +53,9 @@ function readChart(contents: Uint8Array): KapChart | undefined {
 
     const rows: KapRasterRow[] = [];
 
-    const isEndOfRasterData =
-        () =>
-            stream.peek(0) === 0x00
-            && stream.peek(1) === 0x00
-            && stream.peek(2) === 0x00
-            && stream.peek(3) === 0x00;
+    const rasterSegmentEndToken = [0x00, 0x00, 0x00, 0x00];
 
-    while (stream.hasNext && !isEndOfRasterData()) {
+    while (stream.hasNext && !stream.isNext(rasterSegmentEndToken)) {
         const rowNumber = readRowNumber(stream);
 
         const runs: KapRasterRun[] = [];
