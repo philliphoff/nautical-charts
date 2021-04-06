@@ -1,3 +1,4 @@
+import { KapPalette } from "./metadata";
 import KapStream from "./stream";
 
 export interface KapRasterRun {
@@ -103,4 +104,26 @@ export function parseRasterSegment(stream: KapStream, bitDepth: number): KapRast
     } 
 
     return rows;
+}
+
+export function writeRasterSegment(rasterSegment: KapRasterRow[], palette: KapPalette, buffer: Buffer, bufferWidth: number): void {
+    for (let row of rasterSegment) {
+        let x = 0;
+        
+        // Row numbers are 1-based.
+        const y = row.rowNumber - 1;
+
+        for (let run of row.runs) {
+            const rgba = palette[run.colorIndex] ?? { r: 0x00, g: 0x00, b: 0x00, a: 0x00};
+
+            for (let i = 0; i < run.length && x < bufferWidth; i++, x++) {
+                const index = (y * bufferWidth * 4) + (x * 4);
+
+                buffer[index] = rgba.r;
+                buffer[index + 1] = rgba.g;
+                buffer[index + 2] = rgba.b;
+                buffer[index + 3] = rgba.a ?? 0xFF;
+            }
+        }
+    };
 }

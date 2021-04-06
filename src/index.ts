@@ -2,7 +2,7 @@ import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
 import { TextDecoder } from 'util';
 import { KapMetadata, parseMetadata } from './metadata';
-import { KapRasterRow, KapRasterRun, parseRasterSegment } from './raster';
+import { KapRasterRow, KapRasterRun, parseRasterSegment, writeRasterSegment } from './raster';
 import KapStream from './stream';
 import { KapTextEntry, parseTextSegment } from './text';
 
@@ -91,27 +91,9 @@ async function go() {
         width
     });
 
-    kapChart?.rasterSegment?.forEach(
-        row => {
-            // Row numbers are 1-based.
-            const y = row.rowNumber - 1;
-
-            let x = 0;
-
-            for (let run of row.runs) {
-                // TODO: Watch for undefined?
-                const rgb = kapChart!.metadata!.palette![run.colorIndex];
-
-                for (let i = 0; i < run.length; i++, x++) {
-                    const index = (y * width * 4) + (x * 4);
-
-                    png.data[index] = rgb.r;
-                    png.data[index + 1] = rgb.g;
-                    png.data[index + 2] = rgb.b;
-                    png.data[index + 3] = rgb.a ?? 255;
-                }
-            }
-        });
+    if (kapChart?.rasterSegment && kapChart?.metadata?.palette) {
+        writeRasterSegment(kapChart.rasterSegment, kapChart.metadata.palette, png.data, png.width);
+    }
 
     const pngBuffer = PNG.sync.write(png);
 
