@@ -4,6 +4,8 @@ import { KapRasterRow, parseRasterSegment } from './raster';
 import KapStream from './stream';
 import { KapTextEntry, parseTextSegment } from './text';
 
+export { KapRasterRow, KapRasterRun, writeRasterSegment } from './raster';
+
 const decoder = new TextDecoder();
 
 export interface KapChart {

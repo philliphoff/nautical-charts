@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
-import { readChart } from '../../dist/index';
-import { KapRasterRun, writeRasterSegment } from '../../dist/raster';
+import { readChart } from 'nautical-charts';
+import { KapRasterRun, writeRasterSegment } from 'nautical-charts';
 
 const kapFileName = '../samples/18400/18400_1.kap';
 

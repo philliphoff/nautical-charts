@@ -2,7 +2,10 @@
   "name": "nautical-charts",
   "version": "0.1.0",
   "description": "A library for reading nautical chart files.",
-  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
   "author": "Phillip Hoff <phillip@orst.edu>",
   "license": "MIT",
   "scripts": {
