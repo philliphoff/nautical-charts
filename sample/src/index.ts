@@ -3,7 +3,7 @@ import { PNG } from 'pngjs';
 import { readChart } from 'nautical-charts';
 import { KapRasterRun, writeRasterSegment } from 'nautical-charts';
 
-const kapFileName = '../samples/18400/18400_1.kap';
+const kapFileName = '../samples/18400/344102.kap';
 
 function toHexString(binary: number[]): string {
     return binary.map(
@@ -52,7 +52,7 @@ async function go() {
 
     const pngBuffer = PNG.sync.write(png);
 
-    await fs.writeFile('../samples/18400/18400_1.test.png', pngBuffer);
+    await fs.writeFile('../samples/18400/344102.test.png', pngBuffer);
 }
 
 go();

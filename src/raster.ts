@@ -47,14 +47,18 @@ function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
     // 1110 0000
     // 1111 0000
 
+    // 4: 0111 1000
+    // 5: 0111 1100
+
     // 0111 1000
     let colorIndexMask = 0;
 
-    for (let i = 0; i < bitDepth; i++) {
+    // 7654 3210
+    // 0111 1100
+
+    for (let i = 6; i >= 7 - bitDepth; i--) {
         colorIndexMask += Math.pow(2, i);
     }
-
-    colorIndexMask <<= (bitDepth - 1); 
 
     const value = readVariableLengthValue(stream);
     const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
