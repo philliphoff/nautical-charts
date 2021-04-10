@@ -88,7 +88,10 @@ function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
 export function parseRasterSegment(stream: KapStream, bitDepth: number): KapRasterRow[] {
     const rows: KapRasterRow[] = [];
 
-    const rasterSegmentEndToken = [0x00, 0x00, 0x00, 0x00];
+    // HACK: BSB 3.07 seems to omit the 4-null-byte token; it's probably generally be safe to
+    //       look for the 2-null-byte first half of the first index (which assumes the header
+    //       is less than 65KB).
+    const rasterSegmentEndToken = [0x00, 0x00 /*, 0x00, 0x00 */];
 
     while (stream.hasNext && !stream.isNext(rasterSegmentEndToken)) {
         const rowNumber = readRowNumber(stream);
