@@ -11,6 +11,28 @@ export interface KapRasterRow {
     readonly runs: KapRasterRun[];
 }
 
+const colorIndexMasks = [
+    0b00000000, // 0-bits (placeholder)
+    0b01000000, // 1-bits (2 color palette)
+    0b01100000, // 2-bits (4 color palette)
+    0b01110000, // 3-bits (8 color palette)
+    0b01111000, // 4-bits (16 color palette)
+    0b01111100, // 5-bits (32 color palette)
+    0b01111110, // 6-bits (64 color palette)
+    0b01111111  // 7-bits (128 color palette)
+];
+
+const runLengthMasks = [
+    0b01111111,
+    0b00111111,
+    0b00011111,
+    0b00001111,
+    0b00000111,
+    0b00000011,
+    0b00000001,
+    0b00000000
+];
+
 function readVariableLengthValue(stream: KapStream): number[] {
     const row = [];
 
@@ -41,35 +63,12 @@ function readRowNumber(stream: KapStream): number {
 }
 
 function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
-    // 0000 1111
-    // 1000 0000 = 128
-    // 1100 0000
-    // 1110 0000
-    // 1111 0000
-
-    // 4: 0111 1000
-    // 5: 0111 1100
-
-    // 0111 1000
-    let colorIndexMask = 0;
-
-    // 7654 3210
-    // 0111 1100
-
-    for (let i = 6; i >= 7 - bitDepth; i--) {
-        colorIndexMask += Math.pow(2, i);
-    }
+    let colorIndexMask = colorIndexMasks[bitDepth];
 
     const value = readVariableLengthValue(stream);
     const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
 
-    let lengthMask = 0;
-
-    // 0000 0111
-
-    for (let i = 0; i < 7 - bitDepth; i++) {
-        lengthMask += Math.pow(2, i);
-    }
+    let lengthMask = runLengthMasks[bitDepth];
 
     let length = 1;
 
