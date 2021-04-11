@@ -1,3 +1,6 @@
+// Copyright (c) Phillip Hoff <phillip@orst.edu>.
+// Licensed under the MIT license.
+
 import { KapPalette } from "./metadata";
 import KapStream from "./stream";
 

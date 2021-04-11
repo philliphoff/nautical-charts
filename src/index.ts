@@ -1,3 +1,6 @@
+// Copyright (c) Phillip Hoff <phillip@orst.edu>.
+// Licensed under the MIT license.
+
 import { TextDecoder } from 'util';
 import { KapMetadata, parseMetadata } from './metadata';
 import { KapRasterRow, parseRasterSegment } from './raster';

@@ -1,3 +1,6 @@
+// Copyright (c) Phillip Hoff <phillip@orst.edu>.
+// Licensed under the MIT license.
+
 import { KapTextEntry } from "./text";
 
 export interface KapPalette {
