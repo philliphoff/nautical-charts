@@ -1,0 +1,10 @@
+.vscode/
+dist/*.js.map
+sample/
+samples/
+src/
+
+.gitignore
+.npmignore
+tsconfig.json
+yarn.lock
