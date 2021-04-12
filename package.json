@@ -7,6 +7,9 @@
   },
   "types": "./dist/index.d.ts",
   "author": "Phillip Hoff <phillip@orst.edu>",
+  "repository": {
+    "url": "https://github.com/philliphoff/nautical-charts"
+  },
   "license": "MIT",
   "scripts": {
     "build": "tsc"
