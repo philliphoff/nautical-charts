@@ -11,12 +11,17 @@ export { KapRasterRow, KapRasterRun, writeRasterSegment } from './raster';
 
 const decoder = new TextDecoder();
 
-export interface KapChart {
+interface ChartBase {
+    readonly textSegment?: KapTextEntry[];
+}
+
+export interface KapChart extends ChartBase {
     readonly metadata?: KapMetadata;
     
     readonly rasterSegment?: KapRasterRow[];
+}
 
-    readonly textSegment?: KapTextEntry[];
+export interface BsbChart extends ChartBase {
 }
 
 export function readChart(contents: Uint8Array): KapChart | undefined {
@@ -49,4 +54,23 @@ export function readChart(contents: Uint8Array): KapChart | undefined {
     }
 
     return { metadata, textSegment, rasterSegment };
+}
+
+export function readBsbChart(contents: Uint8Array): BsbChart | undefined {
+    // TODO: Consolidate parsers.
+    let textSegment: KapTextEntry[] | undefined;
+
+    const textSection = decoder.decode(contents);
+        
+    textSegment = parseTextSegment(textSection);
+
+    /*
+    let metadata: KapMetadata | undefined;
+
+    if (textSegment) {
+        metadata = parseMetadata(textSegment);
+    }
+    */
+
+    return { textSegment };
 }
