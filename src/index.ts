@@ -6,6 +6,7 @@ import { KapMetadata, parseMetadata } from './metadata';
 import { KapRasterRow, parseRasterSegment } from './raster';
 import KapStream from './stream';
 import { KapTextEntry, parseTextSegment } from './text';
+export { ArrayStream, ParseStream } from './parseStream';
 
 export { KapRasterRow, KapRasterRun, writeRasterSegment } from './raster';
 

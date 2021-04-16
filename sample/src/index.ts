@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
-import { readChart } from 'nautical-charts';
+import { ArrayStream, ParseStream, readChart } from 'nautical-charts';
 import { KapRasterRun, writeRasterSegment } from 'nautical-charts';
 
 const kapFileName = '../samples/18400/344102.kap';
@@ -25,6 +25,16 @@ function printRun(run: KapRasterRun): string {
 async function go() {
     const kapBuffer = await fs.readFile(kapFileName);
 
+    const kapStream = new ArrayStream(kapBuffer, {});
+    const parseStream = new ParseStream({objectMode: true});
+
+    kapStream.pipe(parseStream);
+
+    parseStream.on('data', data => {
+        console.log(data.text.toString('ascii'));
+    });
+
+    /*
     const kapChart = readChart(kapBuffer);
 
     console.log(kapChart?.textSegment);
@@ -53,6 +63,7 @@ async function go() {
     const pngBuffer = PNG.sync.write(png);
 
     await fs.writeFile('../samples/18400/344102.test.png', pngBuffer);
+    */
 }
 
 go();
