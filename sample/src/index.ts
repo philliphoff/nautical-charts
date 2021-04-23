@@ -31,7 +31,11 @@ async function go() {
     kapStream.pipe(parseStream);
 
     parseStream.on('data', data => {
-        console.log(data.text.toString('ascii'));
+        if (data.type === 'text') {
+            console.log(data.text.toString('ascii'));
+        } else {
+            console.log(data.row);
+        }
     });
 
     /*
