@@ -11,10 +11,17 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/dist/index.js",
+            "program": "${workspaceFolder}/sample/dist/index.js",
+            "cwd": "${workspaceFolder}/sample",
+            "env": {
+                "DEBUG": "*"
+            },
+            "outputCapture": "std",
             "preLaunchTask": "tsc: build - tsconfig.json",
+            "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
+                "${workspaceFolder/dist/**/*.js",
+                "${workspaceFolder}/sample/dist/**/*.js"
             ]
         }
     ]

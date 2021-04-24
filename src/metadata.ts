@@ -34,7 +34,7 @@ function parseHeightAndWidth(textSegment: KapTextEntry[]): { height?: number, wi
     return {};
 }
 
-export function parseMetadata(textSegment: KapTextEntry[]): KapMetadata {
+export function parseKapMetadata(textSegment: KapTextEntry[]): KapMetadata {
     const palette: KapPalette = {};
 
     for (let rgbEntry of textSegment.filter(entry => entry.entryType === 'RGB')) {

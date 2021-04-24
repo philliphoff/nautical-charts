@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
-import { ArrayStream, readChartAsync } from 'nautical-charts';
+import { MemoryStream, parseKapMetadata, parseChart } from 'nautical-charts';
 import { KapRasterRun, writeRasterSegment } from 'nautical-charts';
 
 const kapFileName = '../samples/18400/344102.kap';
@@ -25,9 +25,9 @@ function printRun(run: KapRasterRun): string {
 async function go() {
     const kapBuffer = await fs.readFile(kapFileName);
 
-    const kapStream = new ArrayStream(kapBuffer, {});
+    const kapStream = new MemoryStream(kapBuffer, {});
 
-    const kapChart = await readChartAsync(kapStream);
+    const kapChart = await parseChart(kapStream);
 
     console.log(kapChart?.textSegment);
 
@@ -38,23 +38,27 @@ async function go() {
             });
     }
 
-    // TODO: Infer dimensions if no metadata exists.
-    const height = kapChart!.metadata!.height!;
-    const width = kapChart!.metadata!.width!;
-
-    const png = new PNG({
-        colorType: 2, // RGB
-        height,
-        width
-    });
-
-    if (kapChart?.rasterSegment && kapChart?.metadata?.palette) {
-        writeRasterSegment(kapChart.rasterSegment, kapChart.metadata.palette, png.data, png.width);
+    if (kapChart?.textSegment) {
+        const metadata = parseKapMetadata(kapChart?.textSegment);
+        
+        // TODO: Infer dimensions if no metadata exists.
+        const height = metadata!.height!;
+        const width = metadata!.width!;
+        
+        const png = new PNG({
+            colorType: 2, // RGB
+            height,
+            width
+        });
+        
+        if (kapChart?.rasterSegment && metadata?.palette) {
+            writeRasterSegment(kapChart.rasterSegment, metadata.palette, png.data, png.width);
+        }
+        
+        const pngBuffer = PNG.sync.write(png);
+        
+        await fs.writeFile('../samples/18400/344102.test.png', pngBuffer);
     }
-
-    const pngBuffer = PNG.sync.write(png);
-
-    await fs.writeFile('../samples/18400/344102.test.png', pngBuffer);
 }
 
 go();
