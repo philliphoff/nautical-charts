@@ -69,8 +69,12 @@ export function readChartAsync(stream: NodeJS.ReadableStream): Promise<KapChart 
             chartStream.on(
                 'end',
                 () => {
+                    const textSegment = parseTextSegmentEntries(textEntries);
+                    const metadata = parseMetadata(textSegment);
+
                     resolve({
-                        textSegment: parseTextSegmentEntries(textEntries)
+                        metadata,
+                        textSegment
                     });
                 });
 
