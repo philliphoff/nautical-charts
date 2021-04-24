@@ -29,15 +29,6 @@ async function go() {
 
     const kapChart = await readChartAsync(kapStream);
 
-    for (let entry of kapChart?.textSegment ?? []) {
-        for (let line of entry.lines) {
-            console.log(line);
-        }
-    }
-
-    /*
-    const kapChart = readChart(kapBuffer);
-
     console.log(kapChart?.textSegment);
 
     if (kapChart?.rasterSegment) {
@@ -64,11 +55,6 @@ async function go() {
     const pngBuffer = PNG.sync.write(png);
 
     await fs.writeFile('../samples/18400/344102.test.png', pngBuffer);
-    */
 }
 
-go().then(
-    () => {
-        console.log('Done!');
-    }
-);
+go();
