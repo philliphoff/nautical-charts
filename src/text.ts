@@ -9,6 +9,10 @@ export interface KapTextEntry {
 export function parseTextSegment(textSegment: string): KapTextEntry[] {
     const lines = textSegment.split('\r\n');
 
+    return parseTextSegmentEntries(lines);
+}
+
+export function parseTextSegmentEntries(lines: string[]): KapTextEntry[] {
     const entries: KapTextEntry[] = [];
     
     let currentEntry: KapTextEntry;

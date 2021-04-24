@@ -26,28 +26,8 @@ export class ArrayStream extends Readable {
 class StreamBuffer {
     private buffer = Buffer.alloc(0);
 
-    indexOf(values: Buffer): number {
-        return this.buffer.indexOf(values);
-    }
-
-    get inner(): Buffer {
-        return this.buffer;
-    }
-
-    get length(): number {
-        return this.buffer.length;
-    }
-
     push(chunk: Buffer) {
         this.buffer = Buffer.concat([this.buffer, chunk]);
-    }
-
-    read(length: number): Buffer {
-        const oldBuffer = this.buffer;
-
-        this.buffer = Buffer.from(oldBuffer.buffer, oldBuffer.byteOffset + length);
-
-        return Buffer.from(oldBuffer.buffer, oldBuffer.byteOffset, length);
     }
 
     tryReadUntil(values: Buffer): Buffer | undefined {
@@ -102,14 +82,42 @@ class StreamBuffer {
 
         return row;    
     }
+
+    private read(length: number): Buffer {
+        const oldBuffer = this.buffer;
+
+        this.buffer = Buffer.from(oldBuffer.buffer, oldBuffer.byteOffset + length);
+
+        return Buffer.from(oldBuffer.buffer, oldBuffer.byteOffset, length);
+    }
 }
 
-export class ParseStream extends Transform {
+export type TextEntryData = {
+    type: 'text';
+    text: string;
+};
+
+export type BitDepthData = {
+    type: 'bitDepth';
+    bitDepth: number;
+};
+
+export type RasterRowData = {
+    type: 'row';
+    row: number[][];
+};
+
+export type ChartStreamDataTypes = TextEntryData | BitDepthData | RasterRowData;
+
+export interface ReadableChartStream {
+    on(name: 'data', handler: (data: ChartStreamDataTypes) => void): this;
+}
+
+export class ChartStream extends Transform implements ReadableChartStream {
     private readonly buffer = new StreamBuffer();
     private processor: () => boolean;
-    private bitDepth: number | undefined;
 
-    constructor(options: TransformOptions) {
+    constructor(options?: TransformOptions) {
         super(options);
 
         this.processor = this.processText;
@@ -150,10 +158,10 @@ export class ParseStream extends Transform {
             return false;
         }
 
-        const entry = this.buffer.tryReadUntil(this.textEntryEndToken);
+        const text = this.buffer.tryReadUntil(this.textEntryEndToken);
 
-        if (entry) {
-            this.push({ type: 'text', text: entry });
+        if (text) {
+            this.push({ type: 'text', text: Buffer.from(text.buffer, text.byteOffset, text.length - this.textEntryEndToken.length).toString('ascii') });
 
             return true;
         }
@@ -165,7 +173,9 @@ export class ParseStream extends Transform {
         const bitDepthBuffer = this.buffer.tryReadLength(1);
 
         if (bitDepthBuffer) {
-            this.bitDepth = bitDepthBuffer[0];
+            const bitDepth = bitDepthBuffer[0];
+
+            this.push({ type: 'bitDepth', bitDepth });
 
             this.processor = this.processRasterSegment;
 

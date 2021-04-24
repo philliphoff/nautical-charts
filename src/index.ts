@@ -2,11 +2,12 @@
 // Licensed under the MIT license.
 
 import { TextDecoder } from 'util';
+import { ChartStream, ChartStreamDataTypes } from './chartStream';
 import { KapMetadata, parseMetadata } from './metadata';
 import { KapRasterRow, parseRasterSegment } from './raster';
 import KapStream from './stream';
-import { KapTextEntry, parseTextSegment } from './text';
-export { ArrayStream, ParseStream } from './parseStream';
+import { KapTextEntry, parseTextSegment, parseTextSegmentEntries } from './text';
+export { ArrayStream } from './chartStream';
 
 export { KapRasterRow, KapRasterRun, writeRasterSegment } from './raster';
 
@@ -23,6 +24,57 @@ export interface KapChart extends ChartBase {
 }
 
 export interface BsbChart extends ChartBase {
+}
+
+export function readChartAsync(stream: NodeJS.ReadableStream): Promise<KapChart | undefined> {
+    return new Promise(
+        (resolve, reject) => {
+            const textEntries: string[] = [];
+            let bitDepth: number;
+            const rows: number[][][] = [];
+
+            const chartStream = new ChartStream({ objectMode: true });
+
+            chartStream.on(
+                'data',
+                (data: ChartStreamDataTypes) => {
+                    switch (data.type) {
+                        case 'text':
+
+                            textEntries.push(data.text);
+
+                            break;
+
+                        case 'bitDepth':
+
+                            bitDepth = data.bitDepth;
+
+                            break;
+
+                        case 'row':
+
+                            rows.push(data.row);
+
+                            break;
+                    }
+                });
+
+            chartStream.on(
+                'end',
+                () => {
+                    resolve({
+                        textSegment: parseTextSegmentEntries(textEntries)
+                    });
+                });
+
+            chartStream.on(
+                'error',
+                err => {
+                    reject(err);
+                });
+
+            stream.pipe(chartStream);
+        });
 }
 
 export function readChart(contents: Uint8Array): KapChart | undefined {
