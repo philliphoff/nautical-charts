@@ -74,7 +74,7 @@ class StreamBuffer {
     
         do
         {
-            if (currentPosition === this.buffer.length || this.buffer[currentPosition] === 0x00) {
+            if (currentPosition === this.buffer.length) {
                 return undefined;
             }
 

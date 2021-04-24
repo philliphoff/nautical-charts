@@ -4,7 +4,7 @@
 import { TextDecoder } from 'util';
 import { ChartStream, ChartStreamDataTypes } from './chartStream';
 import { KapMetadata, parseMetadata } from './metadata';
-import { KapRasterRow, parseRasterSegment } from './raster';
+import { KapRasterRow, parseRasterSegment, parseRasterSegmentFromLine } from './raster';
 import KapStream from './stream';
 import { KapTextEntry, parseTextSegment, parseTextSegmentEntries } from './text';
 export { ArrayStream } from './chartStream';
@@ -71,9 +71,11 @@ export function readChartAsync(stream: NodeJS.ReadableStream): Promise<KapChart 
                 () => {
                     const textSegment = parseTextSegmentEntries(textEntries);
                     const metadata = parseMetadata(textSegment);
+                    const rasterSegment = parseRasterSegmentFromLine(rows, bitDepth);
 
                     resolve({
                         metadata,
+                        rasterSegment,
                         textSegment
                     });
                 });

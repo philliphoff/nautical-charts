@@ -56,6 +56,11 @@ function readVariableLengthValue(stream: KapStream): number[] {
 function readRowNumber(stream: KapStream): number {
     const value = readVariableLengthValue(stream);
 
+    return readRowNumberFromValue(value);
+}
+
+function readRowNumberFromValue(value: number[]): number {
+
     let number = 0;
 
     for (let i = value.length - 1, pow = 0; i >= 0; i--, pow++) {
@@ -66,9 +71,14 @@ function readRowNumber(stream: KapStream): number {
 }
 
 function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
+    const value = readVariableLengthValue(stream);
+
+    return readRasterRunFromValue(value, bitDepth);
+}
+
+function readRasterRunFromValue(value: number[], bitDepth: number): KapRasterRun {
     let colorIndexMask = colorIndexMasks[bitDepth];
 
-    const value = readVariableLengthValue(stream);
     const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
 
     let lengthMask = runLengthMasks[bitDepth];
@@ -86,6 +96,12 @@ function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
     }
 
     return { colorIndex, length };
+}
+
+export function parseRasterSegmentFromLine(line: number[][][], bitDepth: number): KapRasterRow[] {
+    const rows: KapRasterRow[] = [];
+
+    return line.map(values => ({ rowNumber: readRowNumberFromValue(values[0]), runs: values.slice(1).map(value => readRasterRunFromValue(value, bitDepth)) }));
 }
 
 export function parseRasterSegment(stream: KapStream, bitDepth: number): KapRasterRow[] {
