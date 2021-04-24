@@ -1,6 +1,9 @@
 import { Readable, ReadableOptions, Transform, TransformOptions } from 'stream';
+import { debug } from 'debug';
 
 export class ArrayStream extends Readable {
+    private static readonly log = debug('ArrayStream');
+
     private position = 0;
 
     constructor(private readonly contents: Uint8Array, options: ReadableOptions) {
@@ -10,6 +13,8 @@ export class ArrayStream extends Readable {
     _read(size: number) {
         if (this.position < this.contents.length) {
             size = Math.min(size, this.contents.length - this.position);
+
+            ArrayStream.log(`Reading [${this.position}..${this.position + size}) (${size} bytes).`);
 
             // Create a Buffer that exposes a range of (i.e. does not copy) the original array...
             const buffer = Buffer.from(this.contents.buffer, this.position, size);
@@ -123,8 +128,10 @@ export class ChartStream extends Transform implements ReadableChartStream {
         this.processor = this.processText;
     }
 
-    _flush() {
+    _flush(callback: () => void) {
         this.processChunks();
+
+        callback();
     }
 
     _transform(chunk: Buffer, encoding: unknown, callback: () => void) {

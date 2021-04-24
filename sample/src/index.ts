@@ -67,4 +67,8 @@ async function go() {
     */
 }
 
-go();
+go().then(
+    () => {
+        console.log('Done!');
+    }
+);

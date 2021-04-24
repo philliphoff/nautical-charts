@@ -35,6 +35,8 @@ export function readChartAsync(stream: NodeJS.ReadableStream): Promise<KapChart 
 
             const chartStream = new ChartStream({ objectMode: true });
 
+            stream.pipe(chartStream);
+
             chartStream.on(
                 'data',
                 (data: ChartStreamDataTypes) => {
@@ -59,6 +61,11 @@ export function readChartAsync(stream: NodeJS.ReadableStream): Promise<KapChart 
                     }
                 });
 
+            chartStream.on('close',
+            () => {
+
+            });
+
             chartStream.on(
                 'end',
                 () => {
@@ -72,8 +79,6 @@ export function readChartAsync(stream: NodeJS.ReadableStream): Promise<KapChart 
                 err => {
                     reject(err);
                 });
-
-            stream.pipe(chartStream);
         });
 }
 
