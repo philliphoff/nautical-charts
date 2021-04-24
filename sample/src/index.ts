@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
 import { MemoryStream, parseKapMetadata, parseChart } from 'nautical-charts';
-import { KapRasterRun, writeRasterSegment } from 'nautical-charts';
+import { BsbRasterRun, writeRasterSegment } from 'nautical-charts';
 
 const kapFileName = '../samples/18400/344102.kap';
 
@@ -18,7 +18,7 @@ function toHexString(binary: number[]): string {
         }).join(' ');
 }
 
-function printRun(run: KapRasterRun): string {
+function printRun(run: BsbRasterRun): string {
     return `[${run.colorIndex} ${run.length}]`;
 }
 

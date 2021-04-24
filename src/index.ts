@@ -2,19 +2,19 @@
 // Licensed under the MIT license.
 
 import { ChartStream, ChartStreamDataTypes } from './chartStream';
-import { KapRasterRow, parseRasterSegmentFromLine } from './raster';
-import { KapTextEntry, parseTextSegmentEntries } from './text';
+import { BsbRasterRow, parseRasterSegmentFromLine } from './raster';
+import { BsbTextEntry, parseTextSegmentEntries } from './text';
 export { MemoryStream } from './memoryStream';
 export { KapMetadata, parseKapMetadata } from './metadata';
 
-export { KapRasterRow, KapRasterRun, writeRasterSegment } from './raster';
+export { BsbRasterRow, BsbRasterRun, writeRasterSegment } from './raster';
 
-export interface KapChart {
-    readonly rasterSegment?: KapRasterRow[];
-    readonly textSegment?: KapTextEntry[];
+export interface BsbChart {
+    readonly rasterSegment?: BsbRasterRow[];
+    readonly textSegment?: BsbTextEntry[];
 }
 
-export function parseChart(stream: NodeJS.ReadableStream): Promise<KapChart | undefined> {
+export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart | undefined> {
     return new Promise(
         (resolve, reject) => {
             const textEntries: string[] = [];

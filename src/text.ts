@@ -1,23 +1,23 @@
 // Copyright (c) Phillip Hoff <phillip@orst.edu>.
 // Licensed under the MIT license.
 
-export interface KapTextEntry {
+export interface BsbTextEntry {
     entryType: string;
     lines: string[];
 }
 
-export function parseTextSegment(textSegment: string): KapTextEntry[] {
+export function parseTextSegment(textSegment: string): BsbTextEntry[] {
     const lines = textSegment.split('\r\n');
 
     return parseTextSegmentEntries(lines);
 }
 
-export function parseTextSegmentEntries(lines: string[]): KapTextEntry[] {
-    const entries: KapTextEntry[] = [];
+export function parseTextSegmentEntries(lines: string[]): BsbTextEntry[] {
+    const entries: BsbTextEntry[] = [];
     
-    let currentEntry: KapTextEntry;
+    let currentEntry: BsbTextEntry;
 
-    function startEntry(entry: KapTextEntry) {
+    function startEntry(entry: BsbTextEntry) {
         entries.push(entry);
 
         currentEntry = entry;

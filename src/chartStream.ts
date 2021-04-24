@@ -1,5 +1,4 @@
-import { Readable, ReadableOptions, Transform, TransformOptions } from 'stream';
-import { debug } from 'debug';
+import { Transform, TransformOptions } from 'stream';
 
 class StreamBuffer {
     private buffer = Buffer.alloc(0);
@@ -125,6 +124,10 @@ export class ChartStream extends Transform implements ReadableChartStream {
 
     private readonly textEntryEndToken = Buffer.from([0x0D, 0x0A]);
     private readonly textSegmentEndToken = Buffer.from([0x1A, 0x00]);
+
+    // HACK: BSB 3.07 seems to omit the 4-null-byte token; it's probably generally be safe to
+    //       look for the 2-null-byte first half of the first index (which assumes the header
+    //       is less than 65KB).
     private readonly rasterEndToken = Buffer.from([0x00]);
 
     private processText(): boolean {

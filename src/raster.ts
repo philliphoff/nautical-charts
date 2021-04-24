@@ -2,16 +2,15 @@
 // Licensed under the MIT license.
 
 import { KapPalette } from "./metadata";
-import KapStream from "./stream";
 
-export interface KapRasterRun {
+export interface BsbRasterRun {
     colorIndex: number;
     length: number;
 }
 
-export interface KapRasterRow {
+export interface BsbRasterRow {
     readonly rowNumber: number;
-    readonly runs: KapRasterRun[];
+    readonly runs: BsbRasterRun[];
 }
 
 const colorIndexMasks = [
@@ -36,29 +35,6 @@ const runLengthMasks = [
     0b00000000
 ];
 
-function readVariableLengthValue(stream: KapStream): number[] {
-    const row = [];
-
-    let current;
-
-    do
-    {
-        current = stream.next();
-
-        if (current !== undefined) {
-            row.push(current & 0x7F);
-        }
-    } while (current !== undefined && current > 127);
-
-    return row;
-}
-
-function readRowNumber(stream: KapStream): number {
-    const value = readVariableLengthValue(stream);
-
-    return readRowNumberFromValue(value);
-}
-
 function readRowNumberFromValue(value: number[]): number {
 
     let number = 0;
@@ -70,13 +46,7 @@ function readRowNumberFromValue(value: number[]): number {
     return number;
 }
 
-function readRasterRun(stream: KapStream, bitDepth: number): KapRasterRun {
-    const value = readVariableLengthValue(stream);
-
-    return readRasterRunFromValue(value, bitDepth);
-}
-
-function readRasterRunFromValue(value: number[], bitDepth: number): KapRasterRun {
+function readRasterRunFromValue(value: number[], bitDepth: number): BsbRasterRun {
     let colorIndexMask = colorIndexMasks[bitDepth];
 
     const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
@@ -98,40 +68,13 @@ function readRasterRunFromValue(value: number[], bitDepth: number): KapRasterRun
     return { colorIndex, length };
 }
 
-export function parseRasterSegmentFromLine(line: number[][][], bitDepth: number): KapRasterRow[] {
-    const rows: KapRasterRow[] = [];
+export function parseRasterSegmentFromLine(line: number[][][], bitDepth: number): BsbRasterRow[] {
+    const rows: BsbRasterRow[] = [];
 
     return line.map(values => ({ rowNumber: readRowNumberFromValue(values[0]), runs: values.slice(1).map(value => readRasterRunFromValue(value, bitDepth)) }));
 }
 
-export function parseRasterSegment(stream: KapStream, bitDepth: number): KapRasterRow[] {
-    const rows: KapRasterRow[] = [];
-
-    // HACK: BSB 3.07 seems to omit the 4-null-byte token; it's probably generally be safe to
-    //       look for the 2-null-byte first half of the first index (which assumes the header
-    //       is less than 65KB).
-    const rasterSegmentEndToken = [0x00, 0x00 /*, 0x00, 0x00 */];
-
-    while (stream.hasNext && !stream.isNext(rasterSegmentEndToken)) {
-        const rowNumber = readRowNumber(stream);
-
-        const runs: KapRasterRun[] = [];
-
-        while (stream.hasNext && stream.peek(0) !== 0x00) {
-            const value = readRasterRun(stream, bitDepth);
-
-            runs.push(value);
-        }
-
-        stream.next();
-
-        rows.push({ rowNumber, runs });
-    } 
-
-    return rows;
-}
-
-export function writeRasterSegment(rasterSegment: KapRasterRow[], palette: KapPalette, buffer: Buffer, bufferWidth: number): void {
+export function writeRasterSegment(rasterSegment: BsbRasterRow[], palette: KapPalette, buffer: Buffer, bufferWidth: number): void {
     for (let row of rasterSegment) {
         let x = 0;
         

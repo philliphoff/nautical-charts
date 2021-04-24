@@ -1,7 +1,7 @@
 // Copyright (c) Phillip Hoff <phillip@orst.edu>.
 // Licensed under the MIT license.
 
-import { KapTextEntry } from "./text";
+import { BsbTextEntry } from "./text";
 
 export interface KapPalette {
     [index: number]: { r: number; g: number; b: number, a?: number };
@@ -13,7 +13,7 @@ export interface KapMetadata {
     readonly width?: number;
 }
 
-function parseHeightAndWidth(textSegment: KapTextEntry[]): { height?: number, width?: number } {
+function parseHeightAndWidth(textSegment: BsbTextEntry[]): { height?: number, width?: number } {
     const header = textSegment.find(entry => entry.entryType === 'BSB');
 
     if (header) {
@@ -34,7 +34,7 @@ function parseHeightAndWidth(textSegment: KapTextEntry[]): { height?: number, wi
     return {};
 }
 
-export function parseKapMetadata(textSegment: KapTextEntry[]): KapMetadata {
+export function parseKapMetadata(textSegment: BsbTextEntry[]): KapMetadata {
     const palette: KapPalette = {};
 
     for (let rgbEntry of textSegment.filter(entry => entry.entryType === 'RGB')) {
