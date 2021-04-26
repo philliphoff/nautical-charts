@@ -35,8 +35,7 @@ const runLengthMasks = [
     0b00000000
 ];
 
-function readRowNumberFromValue(value: number[]): number {
-
+function readRowNumber(value: number[]): number {
     let number = 0;
 
     for (let i = value.length - 1, pow = 0; i >= 0; i--, pow++) {
@@ -46,7 +45,7 @@ function readRowNumberFromValue(value: number[]): number {
     return number;
 }
 
-function readRasterRunFromValue(value: number[], bitDepth: number): BsbRasterRun {
+function readRasterRun(value: number[], bitDepth: number): BsbRasterRun {
     let colorIndexMask = colorIndexMasks[bitDepth];
 
     const colorIndex = (value[0] & colorIndexMask) >>> (7 - bitDepth);
@@ -68,10 +67,9 @@ function readRasterRunFromValue(value: number[], bitDepth: number): BsbRasterRun
     return { colorIndex, length };
 }
 
-export function parseRasterSegmentFromLine(line: number[][][], bitDepth: number): BsbRasterRow[] {
-    const rows: BsbRasterRow[] = [];
-
-    return line.map(values => ({ rowNumber: readRowNumberFromValue(values[0]), runs: values.slice(1).map(value => readRasterRunFromValue(value, bitDepth)) }));
+export function parseRasterSegment(rows: number[][][], bitDepth: number): BsbRasterRow[] {
+    // TODO: Eliminate need for slice().
+    return rows.map(values => ({ rowNumber: readRowNumber(values[0]), runs: values.slice(1).map(value => readRasterRun(value, bitDepth)) }));
 }
 
 export function writeRasterSegment(rasterSegment: BsbRasterRow[], palette: KapPalette, buffer: Buffer, bufferWidth: number): void {

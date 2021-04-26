@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { ChartStream, ChartStreamDataTypes } from './chartStream';
-import { BsbRasterRow, parseRasterSegmentFromLine } from './raster';
+import { BsbRasterRow, parseRasterSegment } from './raster';
 import { BsbTextEntry, parseTextSegmentEntries } from './text';
 export { MemoryStream } from './memoryStream';
 export { KapMetadata, parseKapMetadata } from './metadata';
@@ -53,7 +53,7 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart | un
                 'end',
                 () => {
                     const textSegment = parseTextSegmentEntries(textEntries);
-                    const rasterSegment = parseRasterSegmentFromLine(rows, bitDepth);
+                    const rasterSegment = parseRasterSegment(rows, bitDepth);
 
                     resolve({
                         rasterSegment,

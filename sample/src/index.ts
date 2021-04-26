@@ -42,8 +42,8 @@ async function go() {
         const metadata = parseKapMetadata(kapChart?.textSegment);
         
         // TODO: Infer dimensions if no metadata exists.
-        const height = metadata!.height!;
-        const width = metadata!.width!;
+        const height = metadata!.size!.height!;
+        const width = metadata!.size!.width!;
         
         const png = new PNG({
             colorType: 2, // RGB

@@ -7,56 +7,74 @@ export interface KapPalette {
     [index: number]: { r: number; g: number; b: number, a?: number };
 }
 
-export interface KapMetadata {
+export interface KapSize {
     readonly height?: number;
-    readonly palette?: KapPalette;
     readonly width?: number;
 }
 
-function parseHeightAndWidth(textSegment: BsbTextEntry[]): { height?: number, width?: number } {
-    const header = textSegment.find(entry => entry.entryType === 'BSB');
-
-    if (header) {
-        const regex = /RA=(?<width>\d+),(?<height>\d+)/;
-
-        for (let line of header.lines) {
-            const match = regex.exec(line);
-
-            if (match) {
-                return {
-                    height: parseInt(match.groups!['height'], 10),
-                    width: parseInt(match.groups!['width'], 10)
-                };
-            }
-        }
-    }
-
-    return {};
+export interface KapMetadata {
+    readonly palette?: KapPalette;
+    readonly size?: KapSize;
 }
 
-export function parseKapMetadata(textSegment: BsbTextEntry[]): KapMetadata {
-    const palette: KapPalette = {};
+function parseHeightAndWidth(entry: BsbTextEntry, metadata: KapMetadata): KapMetadata {
+    const regex = /RA=(?<width>\d+),(?<height>\d+)/;
 
-    for (let rgbEntry of textSegment.filter(entry => entry.entryType === 'RGB')) {
-        const regex = /^(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)$/;
+    for (let line of entry.lines) {
+        const match = regex.exec(line);
 
-        const match = regex.exec(rgbEntry.lines[0]);
-        
         if (match) {
-            const index = parseInt(match.groups!['index'], 10);
-            const r = parseInt(match.groups!['r'], 10);
-            const g = parseInt(match.groups!['g'], 10);
-            const b = parseInt(match.groups!['b'], 10);
-
-            palette[index] = { r, g, b };
+            return {
+                ...metadata,
+                size: {
+                    height: parseInt(match.groups!['height'], 10),
+                    width: parseInt(match.groups!['width'], 10)
+                }
+            };
         }
     }
 
-    const { height, width } = parseHeightAndWidth(textSegment);
+    return metadata;
+}
 
-    return {
-        height,
-        palette,
-        width
-    };
+export function parseKapPalette(entry: BsbTextEntry, metadata: KapMetadata): KapMetadata {
+    const regex = /^(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)$/;
+
+    const match = regex.exec(entry.lines[0]);
+    
+    if (match) {
+        const index = parseInt(match.groups!['index'], 10);
+        const r = parseInt(match.groups!['r'], 10);
+        const g = parseInt(match.groups!['g'], 10);
+        const b = parseInt(match.groups!['b'], 10);
+
+        return {
+            ...metadata,
+            palette: {
+                ...metadata.palette,
+                [index]: {r, g, b}
+            }
+        };
+    }
+
+    return metadata;
+}
+
+const typeParsers: { [key:string]: (entry: BsbTextEntry, metadata: KapMetadata) => KapMetadata } = {
+    BSB: parseHeightAndWidth,
+    RGB: parseKapPalette
+};
+
+export function parseKapMetadata(textSegment: BsbTextEntry[]): KapMetadata {
+    let metadata: KapMetadata = {};
+
+    for (let entry of textSegment) {
+        const parser = typeParsers[entry.entryType];
+
+        if (parser) {
+            metadata = parser(entry, metadata);
+        }
+    }
+
+    return metadata;
 }
