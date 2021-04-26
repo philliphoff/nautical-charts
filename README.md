@@ -1,5 +1,8 @@
 # nautical-charts
 
+![npm](https://img.shields.io/npm/v/nautical-charts)
+![GitHub](https://img.shields.io/github/license/philliphoff/nautical-charts)
+
 A pure JavaScript library for reading nautical chart files. In particular, for reading BSB-formatted (`.bsb` and `.kap`) files.
 
 ## Installation
@@ -42,4 +45,4 @@ The partially-processed entries that make up the text segment.
 
 ## License
 
-The MIT License (see [LICENSE.md](LICENSE.md))
+MIT (see [LICENSE.md](LICENSE.md))
