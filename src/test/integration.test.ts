@@ -8,14 +8,24 @@ import { writeRasterSegment } from '../raster';
 
 const testAssetDir = path.join(__dirname, '..', '..', 'assets', 'test');
 
+function readPngFromPath(path: string): Promise<PNG> {   
+    return new Promise(
+        (resolve, reject) => {
+            const stream = fs.createReadStream(path);
+            const png = new PNG();
+
+            stream
+                .pipe(png)
+                .on('parsed', () => resolve(png))
+                .on('error', err => reject(err));
+        });
+}
+
 test('integration', async () => {
-    const file = await fs.promises.open(path.join(testAssetDir, '344102.KAP'), 'r');
-    const fileStream = fs.createReadStream('', { fd: file.fd });
+    const fileStream = fs.createReadStream(path.join(testAssetDir, '344102.KAP'));
 
     const chart = await parseChart(fileStream);
     
-    await file.close();
-
     expect(chart).toBeDefined();
     expect(chart!.textSegment).toBeDefined();
     expect(chart!.rasterSegment).toBeDefined();
@@ -25,19 +35,23 @@ test('integration', async () => {
     expect(metadata.palette).toBeDefined();
     expect(metadata.size).toBeDefined();
 
-    const img1 = new PNG({
+    const actualImage = new PNG({
         colorType: 2, // RGB
         height: metadata.size!.height,
         width: metadata.size!.width
     });
     
-    writeRasterSegment(chart!.rasterSegment!, metadata.palette!, img1.data, img1.width);
+    writeRasterSegment(chart!.rasterSegment!, metadata.palette!, actualImage.data, actualImage.width);
 
-    const img2 = PNG.sync.read(fs.readFileSync(path.join(testAssetDir, '344102.png')));
-    const {width, height} = img1;
-    const diff = new PNG({width, height});
+    const expectedImage = await readPngFromPath(path.join(testAssetDir, '344102.png'));
 
-    const mismatchedPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
+    expect(actualImage.height).toEqual(expectedImage.height);
+    expect(actualImage.width).toEqual(expectedImage.width);
+
+    const { height, width } = actualImage;
+    const diffImage = new PNG({ height, width });
+
+    const mismatchedPixels = pixelmatch(actualImage.data, expectedImage.data, diffImage.data, width, height, { threshold: 0.1 });
 
     expect(mismatchedPixels).toEqual(0);
 });
