@@ -1,3 +1,6 @@
+// Copyright (c) Phillip Hoff <phillip@orst.edu>.
+// Licensed under the MIT license.
+
 import { Transform, TransformOptions } from 'stream';
 
 class StreamBuffer {

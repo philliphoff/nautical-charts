@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import { PNG } from 'pngjs';
-import { MemoryStream, parseKapMetadata, parseChart } from 'nautical-charts';
+import { MemoryStream, parseMetadata, parseChart } from 'nautical-charts';
 import { BsbRasterRun, writeRasterSegment } from 'nautical-charts';
 
 const kapFileName = '../samples/18400/344102.kap';
@@ -39,7 +39,7 @@ async function go() {
     }
 
     if (kapChart?.textSegment) {
-        const metadata = parseKapMetadata(kapChart?.textSegment);
+        const metadata = parseMetadata(kapChart?.textSegment);
         
         // TODO: Infer dimensions if no metadata exists.
         const height = metadata!.size!.height!;

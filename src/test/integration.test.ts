@@ -1,9 +1,12 @@
+// Copyright (c) Phillip Hoff <phillip@orst.edu>.
+// Licensed under the MIT license.
+
 import * as fs from 'fs';
 import * as path from 'path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { parseChart } from '../index';
-import { parseKapMetadata } from '../metadata';
+import { parseMetadata } from '../metadata';
 import { writeRasterSegment } from '../raster';
 
 const testAssetDir = path.join(__dirname, '..', '..', 'assets', 'test');
@@ -30,7 +33,7 @@ test('integration', async () => {
     expect(chart!.textSegment).toBeDefined();
     expect(chart!.rasterSegment).toBeDefined();
 
-    const metadata = parseKapMetadata(chart!.textSegment!);
+    const metadata = parseMetadata(chart!.textSegment!);
 
     expect(metadata.palette).toBeDefined();
     expect(metadata.size).toBeDefined();

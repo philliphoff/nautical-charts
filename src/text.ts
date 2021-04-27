@@ -1,9 +1,20 @@
 // Copyright (c) Phillip Hoff <phillip@orst.edu>.
 // Licensed under the MIT license.
 
+/**
+ * A single entry within a BSB chart text segment, including all lines of text associated with the entry type.
+ */
 export interface BsbTextEntry {
-    entryType: string;
-    lines: string[];
+
+    /**
+     * The type of this entry.
+     */
+    readonly entryType: string;
+
+    /**
+     * All lines of text associated with the entry type.
+     */
+    readonly lines: string[];
 }
 
 export function parseTextSegment(textSegment: string): BsbTextEntry[] {

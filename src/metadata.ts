@@ -3,21 +3,51 @@
 
 import { BsbTextEntry } from "./text";
 
-export interface KapPalette {
-    [index: number]: { r: number; g: number; b: number, a?: number };
+/**
+ * A palette for a BSB chart.
+ */
+export interface BsbPalette {
+
+    /**
+     * @param index The (1-based) index of a color within the palette.
+     * @returns A color in RGBA notation.
+     */
+    readonly [index: number]: { r: number; g: number; b: number, a?: number };
 }
 
-export interface KapSize {
+/**
+ * The size of the BSB chart.
+ */
+export interface BsbSize {
+
+    /**
+     * The height (in pixels) of the raster data of the chart.
+     */
     readonly height?: number;
+
+    /**
+     * The width (in pixels) of the raster data of the chart.
+     */
     readonly width?: number;
 }
 
-export interface KapMetadata {
-    readonly palette?: KapPalette;
-    readonly size?: KapSize;
+/**
+ * Metadata related to a BSB chart, as parsed from its text segment.
+ */
+export interface BsbMetadata {
+
+    /**
+     * The primary palette of the chart.
+     */
+    readonly palette?: BsbPalette;
+    
+    /**
+     * The size of the chart.
+     */
+    readonly size?: BsbSize;
 }
 
-function parseHeightAndWidth(entry: BsbTextEntry, metadata: KapMetadata): KapMetadata {
+function parseSize(entry: BsbTextEntry, metadata: BsbMetadata): BsbMetadata {
     const regex = /RA=(?<width>\d+),(?<height>\d+)/;
 
     for (let line of entry.lines) {
@@ -37,7 +67,7 @@ function parseHeightAndWidth(entry: BsbTextEntry, metadata: KapMetadata): KapMet
     return metadata;
 }
 
-export function parseKapPalette(entry: BsbTextEntry, metadata: KapMetadata): KapMetadata {
+export function parsePalette(entry: BsbTextEntry, metadata: BsbMetadata): BsbMetadata {
     const regex = /^(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)$/;
 
     const match = regex.exec(entry.lines[0]);
@@ -60,13 +90,18 @@ export function parseKapPalette(entry: BsbTextEntry, metadata: KapMetadata): Kap
     return metadata;
 }
 
-const typeParsers: { [key:string]: (entry: BsbTextEntry, metadata: KapMetadata) => KapMetadata } = {
-    BSB: parseHeightAndWidth,
-    RGB: parseKapPalette
+const typeParsers: { [key:string]: (entry: BsbTextEntry, metadata: BsbMetadata) => BsbMetadata } = {
+    BSB: parseSize,
+    RGB: parsePalette
 };
 
-export function parseKapMetadata(textSegment: BsbTextEntry[]): KapMetadata {
-    let metadata: KapMetadata = {};
+/**
+ * Parses the text segment of a BSB chart and returns well-known metadata, if present.
+ * @param textSegment The text entries of the chart.
+ * @returns The metadata parsed from the chart.
+ */
+export function parseMetadata(textSegment: BsbTextEntry[]): BsbMetadata {
+    let metadata: BsbMetadata = {};
 
     for (let entry of textSegment) {
         const parser = typeParsers[entry.entryType];

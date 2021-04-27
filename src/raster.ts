@@ -1,15 +1,34 @@
 // Copyright (c) Phillip Hoff <phillip@orst.edu>.
 // Licensed under the MIT license.
 
-import { KapPalette } from "./metadata";
+import { BsbPalette } from "./metadata";
 
+/**
+ * A sequential series of pixels of the same color in a row of raster data.
+ */
 export interface BsbRasterRun {
-    colorIndex: number;
-    length: number;
+    /**
+     * The index into a color palette that indicates the color of the pixels.
+     */
+    readonly colorIndex: number;
+
+    /** The number of pixels in the run. */
+    readonly length: number;
 }
 
+/**
+ * A single row of raster data within the chart.
+ */
 export interface BsbRasterRow {
+
+    /**
+     * The (1-based) number of the row.
+     */
     readonly rowNumber: number;
+
+    /**
+     * The runs that encode the raster data of the row.
+     */
     readonly runs: BsbRasterRun[];
 }
 
@@ -72,7 +91,14 @@ export function parseRasterSegment(rows: number[][][], bitDepth: number): BsbRas
     return rows.map(values => ({ rowNumber: readRowNumber(values[0]), runs: values.slice(1).map(value => readRasterRun(value, bitDepth)) }));
 }
 
-export function writeRasterSegment(rasterSegment: BsbRasterRow[], palette: KapPalette, buffer: Buffer, bufferWidth: number): void {
+/**
+ * Writes the RLE encoded raster data of a BSB chart to a bitmap.
+ * @param rasterSegment The rows of raster data for the chart.
+ * @param palette The palette from which to obtain pixel values.
+ * @param buffer The bitmap buffer in which to write the chart raster data.
+ * @param bufferWidth The width of the bitmap buffer.
+ */
+export function writeRasterSegment(rasterSegment: BsbRasterRow[], palette: BsbPalette, buffer: Buffer, bufferWidth: number): void {
     for (let row of rasterSegment) {
         let x = 0;
         

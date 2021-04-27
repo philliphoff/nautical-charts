@@ -5,16 +5,31 @@ import { ChartStream, ChartStreamDataTypes } from './chartStream';
 import { BsbRasterRow, parseRasterSegment } from './raster';
 import { BsbTextEntry, parseTextSegmentEntries } from './text';
 export { MemoryStream } from './memoryStream';
-export { KapMetadata, parseKapMetadata } from './metadata';
+export { BsbMetadata, parseMetadata } from './metadata';
 
 export { BsbRasterRow, BsbRasterRun, writeRasterSegment } from './raster';
 
+/**
+ * A BSB chart.
+ */
 export interface BsbChart {
+    /**
+     * The rows that comprise the raster segment of the chart.
+     */
     readonly rasterSegment?: BsbRasterRow[];
+
+    /**
+     * The text entries that comprise the text segment of the chart.
+     */
     readonly textSegment?: BsbTextEntry[];
 }
 
-export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart | undefined> {
+/**
+ * Parses a BSB chart from a readable (e.g. file) stream.
+ * @param stream The stream from which to read the chart data.
+ * @returns A BSB chart.
+ */
+export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
     return new Promise(
         (resolve, reject) => {
             const textEntries: string[] = [];

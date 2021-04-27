@@ -4,12 +4,20 @@
 import { Readable, ReadableOptions } from 'stream';
 import { debug } from 'debug';
 
+/**
+ * A readable stream for an in-memory byte array.
+ */
 export class MemoryStream extends Readable {
     private static readonly log = debug('nautical-charts:memory-stream');
 
     private position = 0;
 
-    constructor(private readonly contents: Uint8Array, options: ReadableOptions) {
+    /**
+     * The constructor for the MemoryStream
+     * @param contents The array from which to read.
+     * @param options An optional set of readable stream options.
+     */
+    constructor(private readonly contents: Uint8Array, options?: ReadableOptions) {
         super(options);
     }
 
