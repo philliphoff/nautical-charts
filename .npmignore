@@ -6,5 +6,6 @@ src/
 
 .gitignore
 .npmignore
+README.template.md
 tsconfig.json
 yarn.lock
