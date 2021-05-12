@@ -12,37 +12,84 @@ A pure JavaScript library for reading nautical chart files. In particular, for r
 $ npm install nautical-charts --save
 ```
 
-## API
+## API Reference
+## Classes
 
-> This API is in considerable flux, subject to drastic change, and therefore has not been fully documented.
+<dl>
+<dt><a href="#MemoryStream">MemoryStream</a></dt>
+<dd><p>A readable stream for an in-memory byte array.</p>
+</dd>
+</dl>
 
-### `readChart(contents: Uint8Array): KapChart | undefined`
+## Functions
 
-Parses a chart from the contents of a buffer.
+<dl>
+<dt><a href="#parseChart">parseChart(stream)</a> ⇒</dt>
+<dd><p>Parses a BSB chart from a readable (e.g. file) stream.</p>
+</dd>
+<dt><a href="#parseMetadata">parseMetadata(textSegment)</a> ⇒</dt>
+<dd><p>Parses the text segment of a BSB chart and returns well-known metadata, if present.</p>
+</dd>
+<dt><a href="#writeRasterSegment">writeRasterSegment(rasterSegment, palette, buffer, bufferWidth)</a></dt>
+<dd><p>Writes the RLE encoded raster data of a BSB chart to a bitmap.</p>
+</dd>
+</dl>
 
-### `writeRasterSegment(rasterSegment: KapRasterRow[], palette: KapPalette, buffer: Buffer, bufferWidth: number): void`
+<a name="MemoryStream"></a>
 
-Writes the (run-length-encoded, or RLE format) raster segment of a chart to a buffer in bitmap (i.e. RGBA) format. This function is useful for converting the chart to a more accessable format (such as PNG, via [pngjs](https://www.npmjs.com/package/pngjs)).
+## MemoryStream
+A readable stream for an in-memory byte array.
 
-## Types
+**Kind**: global class  
+<a name="new_MemoryStream_new"></a>
 
-> These types are in considerable flux, subject to drastic change, and therefore have not been fully documented.
+### new MemoryStream(contents, options)
+The constructor for the MemoryStream
 
-### `interface KapChart`
 
-A parsed BSB chart.
+| Param | Description |
+| --- | --- |
+| contents | The array from which to read. |
+| options | An optional set of readable stream options. |
 
-#### `readonly metadata?: KapMetadata;`
+<a name="parseChart"></a>
 
-Metadata related to the chart specifically parsed from the text segment.
+## parseChart(stream) ⇒
+Parses a BSB chart from a readable (e.g. file) stream.
 
-#### `readonly rasterSegment?: KapRasterRow[];`
+**Kind**: global function  
+**Returns**: A BSB chart.  
 
-The rows that make up the raster segment of the chart.
+| Param | Description |
+| --- | --- |
+| stream | The stream from which to read the chart data. |
 
-#### `readonly textSegment?: KapTextEntry[];`
+<a name="parseMetadata"></a>
 
-The partially-processed entries that make up the text segment.
+## parseMetadata(textSegment) ⇒
+Parses the text segment of a BSB chart and returns well-known metadata, if present.
+
+**Kind**: global function  
+**Returns**: The metadata parsed from the chart.  
+
+| Param | Description |
+| --- | --- |
+| textSegment | The text entries of the chart. |
+
+<a name="writeRasterSegment"></a>
+
+## writeRasterSegment(rasterSegment, palette, buffer, bufferWidth)
+Writes the RLE encoded raster data of a BSB chart to a bitmap.
+
+**Kind**: global function  
+
+| Param | Description |
+| --- | --- |
+| rasterSegment | The rows of raster data for the chart. |
+| palette | The palette from which to obtain pixel values. |
+| buffer | The bitmap buffer in which to write the chart raster data. |
+| bufferWidth | The width of the bitmap buffer. |
+
 
 ## License
 

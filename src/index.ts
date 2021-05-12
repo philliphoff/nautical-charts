@@ -6,8 +6,11 @@ import { BsbRasterRow, parseRasterSegment } from './raster';
 import { BsbTextEntry, parseTextSegmentEntries } from './text';
 export { MemoryStream } from './memoryStream';
 export { BsbMetadata, parseMetadata } from './metadata';
-
 export { BsbRasterRow, BsbRasterRun, writeRasterSegment } from './raster';
+
+/**
+ * @module nautical-charts
+ */
 
 /**
  * A BSB chart.
