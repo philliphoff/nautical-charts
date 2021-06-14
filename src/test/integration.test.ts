@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import { parseChart } from '../index';
+import { BsbChart, parseChart } from '../index';
 import { MemoryStream } from '../memoryStream';
 import { parseMetadata } from '../metadata';
 import { writeRasterSegment } from '../raster';
@@ -28,7 +28,13 @@ function readPngFromPath(path: string): Promise<PNG> {
 test('integration with file stream', async () => {
     const fileStream = fs.createReadStream(path.join(testAssetDir, '344102.KAP'));
 
-    const chart = await parseChart(fileStream);
+    let chart: BsbChart;
+    
+    try {
+        chart = await parseChart(fileStream);
+    } finally {
+        fileStream.destroy();
+    }
     
     expect(chart).toBeDefined();
     expect(chart!.textSegment).toBeDefined();
@@ -64,7 +70,13 @@ test('integration with memory stream', async () => {
     const fileBuffer = fs.readFileSync(path.join(testAssetDir, '344102.KAP'));
     const fileStream = new MemoryStream(fileBuffer);
 
-    const chart = await parseChart(fileStream);
+    let chart: BsbChart;
+
+    try {
+        chart = await parseChart(fileStream);
+    } finally {
+        fileStream.destroy();
+    }
     
     expect(chart).toBeDefined();
     expect(chart!.textSegment).toBeDefined();

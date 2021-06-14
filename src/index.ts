@@ -98,9 +98,6 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
                 const matchCount = buffer.tryReadValues(rasterEndToken);
         
                 if (matchCount === rasterEndToken.length) {
-                    // TODO: Should only remove our listeners.
-                    stream.removeAllListeners();
-        
                     completeParse();
 
                     return false;
@@ -144,30 +141,32 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
             function completeParse() {
                 const textSegment = parseTextSegmentEntries(textEntries);
 
+                stream.removeListener('data', onData);
+                stream.removeListener('end', onEnd);
+                stream.removeListener('error', onError);
+
                 resolve({
                     rasterSegment: rows,
                     textSegment
                 });
             }
 
-            stream.on(
-                'data',
-                (data: Buffer) => {
-                    buffer.push(data);
+            function onData(data: Buffer) {
+                buffer.push(data);
 
-                    processChunks();            
-                });
+                processChunks();            
+            };
 
-            stream.on(
-                'end',
-                () => {
-                    completeParse();
-                });
+            function onEnd() {
+                completeParse();
+            };
 
-            stream.on(
-                'error',
-                err => {
-                    reject(err);
-                });
+            function onError(err: unknown) {
+                reject(err);
+            };
+
+            stream.on('data', onData);
+            stream.on('end', onEnd);
+            stream.on('error', onError);
         });
 }

@@ -23,6 +23,8 @@ export function parseTextSegment(textSegment: string): BsbTextEntry[] {
     return parseTextSegmentEntries(lines);
 }
 
+const continuationToken = '    ';
+
 export function parseTextSegmentEntries(lines: string[]): BsbTextEntry[] {
     const entries: BsbTextEntry[] = [];
     
@@ -39,9 +41,9 @@ export function parseTextSegmentEntries(lines: string[]): BsbTextEntry[] {
             continue;
         } else if (line[0] === '!') {
             startEntry({ entryType: '!', lines: [line.substr(1)] });
-        } else if (line.length >= 4 && line[0] === ' ' && line[1] === ' ' && line[2] === ' ' && line[3] === ' ') {
+        } else if (line.startsWith(continuationToken)) {
             // TODO: Assert currentEntry !== undefined.
-            currentEntry!.lines.push(line.substr(4));
+            currentEntry!.lines.push(line.substr(continuationToken.length));
         } else {
             const entryTypeRegex = /^(?<entryType>[^\/]+)\//g.exec(line);
 
