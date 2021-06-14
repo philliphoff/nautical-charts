@@ -87,10 +87,15 @@ function readRasterRun(value: number[], bitDepth: number): BsbRasterRun {
 }
 
 export function parseRasterRow(row: number[][], bitDepth: number): BsbRasterRow {
-    // TODO: Eliminate need for slice().
+    const runs = Array<BsbRasterRun>(row.length - 1);
+
+    for (let i = 0; i < runs.length; i++) {
+        runs[i] = readRasterRun(row[i + 1], bitDepth);
+    }
+
     return {
         rowNumber: readRowNumber(row[0]),
-        runs: row.slice(1).map(value => readRasterRun(value, bitDepth))
+        runs
     };
 }
 
