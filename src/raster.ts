@@ -86,9 +86,12 @@ function readRasterRun(value: number[], bitDepth: number): BsbRasterRun {
     return { colorIndex, length };
 }
 
-export function parseRasterSegment(rows: number[][][], bitDepth: number): BsbRasterRow[] {
+export function parseRasterRow(row: number[][], bitDepth: number): BsbRasterRow {
     // TODO: Eliminate need for slice().
-    return rows.map(values => ({ rowNumber: readRowNumber(values[0]), runs: values.slice(1).map(value => readRasterRun(value, bitDepth)) }));
+    return {
+        rowNumber: readRowNumber(row[0]),
+        runs: row.slice(1).map(value => readRasterRun(value, bitDepth))
+    };
 }
 
 /**

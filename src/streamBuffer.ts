@@ -1,3 +1,6 @@
+// Copyright (c) Phillip Hoff <phillip@orst.edu>.
+// Licensed under the MIT license.
+
 export default class StreamBuffer {
     private buffer = Buffer.alloc(0);
 

@@ -1,7 +1,7 @@
 // Copyright (c) Phillip Hoff <phillip@orst.edu>.
 // Licensed under the MIT license.
 
-import { BsbRasterRow, parseRasterSegment } from './raster';
+import { BsbRasterRow, parseRasterRow } from './raster';
 import StreamBuffer from './streamBuffer';
 import { BsbTextEntry, parseTextSegmentEntries } from './text';
 export { MemoryStream } from './memoryStream';
@@ -37,7 +37,7 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
         (resolve, reject) => {
             const textEntries: string[] = [];
             let bitDepth: number;
-            const rows: number[][][] = [];
+            const rows: BsbRasterRow[] = [];
 
             const buffer = new StreamBuffer();
             let processor: () => boolean = processText;
@@ -119,7 +119,7 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
                 const matchCount = buffer.tryReadValues(rasterEndToken);
         
                 if (matchCount === rasterEndToken.length) {
-                    rows.push(row);
+                    rows.push(parseRasterRow(row, bitDepth));
         
                     row = [];
         
@@ -143,10 +143,9 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
 
             function completeParse() {
                 const textSegment = parseTextSegmentEntries(textEntries);
-                const rasterSegment = parseRasterSegment(rows, bitDepth);
 
                 resolve({
-                    rasterSegment,
+                    rasterSegment: rows,
                     textSegment
                 });
             }
