@@ -19,7 +19,7 @@ export interface BsbChart {
     /**
      * The rows that comprise the raster segment of the chart.
      */
-    readonly rasterSegment?: BsbRasterRow[];
+    readonly rasterSegment?: { [index: number]: BsbRasterRow };
 
     /**
      * The text entries that comprise the text segment of the chart.
@@ -37,7 +37,7 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
         (resolve, reject) => {
             const textEntries: string[] = [];
             let bitDepth: number;
-            const rows: BsbRasterRow[] = [];
+            const rows: { [index: number]: BsbRasterRow } = {};
 
             const buffer = new StreamBuffer();
             let processor: () => boolean = processText;
@@ -116,7 +116,9 @@ export function parseChart(stream: NodeJS.ReadableStream): Promise<BsbChart> {
                 const matchCount = buffer.tryReadValues(rasterEndToken);
         
                 if (matchCount === rasterEndToken.length) {
-                    rows.push(parseRasterRow(row, bitDepth));
+                    const rasterRow = parseRasterRow(row, bitDepth);
+
+                    rows[rasterRow.rowNumber] = rasterRow;
         
                     row = [];
         

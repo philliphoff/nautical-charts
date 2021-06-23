@@ -106,8 +106,8 @@ export function parseRasterRow(row: number[][], bitDepth: number): BsbRasterRow 
  * @param buffer The bitmap buffer in which to write the chart raster data.
  * @param bufferWidth The width of the bitmap buffer.
  */
-export function writeRasterSegment(rasterSegment: BsbRasterRow[], palette: BsbPalette, buffer: Buffer, bufferWidth: number): void {
-    for (let row of rasterSegment) {
+export function writeRasterSegment(rasterSegment: { [index: number]: BsbRasterRow }, palette: BsbPalette, buffer: Buffer, bufferWidth: number): void {
+    for (let row of Object.values(rasterSegment)) {
         let x = 0;
         
         // Row numbers are 1-based.
