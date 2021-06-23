@@ -2,6 +2,9 @@
   "name": "nautical-charts",
   "version": "0.2.0",
   "description": "A library for reading nautical chart files.",
+  "engines": {
+    "node": ">=14"
+  },
   "exports": {
     ".": "./dist/index.js"
   },
@@ -17,18 +20,16 @@
     "test": "jest --config jest.json"
   },
   "devDependencies": {
-    "@types/debug": "^4.1.5",
     "@types/jest": "^26.0.23",
-    "@types/node": "^12.18.3",
+    "@types/node": "^14.16.10",
     "@types/pixelmatch": "^5.2.3",
     "@types/pngjs": "^6.0.0",
-    "jest": "^26.6.3",
+    "jest": "^27.0.5",
     "jsdoc-to-markdown": "^7.0.1",
     "pixelmatch": "^5.2.1",
     "pngjs": "^6.0.0",
-    "typescript": "^4.2.3"
+    "typescript": "^4.3.4"
   },
   "dependencies": {
-    "debug": "^4.3.1"
   }
 }
