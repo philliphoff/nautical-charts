@@ -3,6 +3,18 @@
 
 import { BsbTextEntry } from "./text";
 
+export interface BsbCoordinate {
+    readonly latitude: number;
+    readonly longitude: number;
+}
+
+export interface BsbColor {
+    r: number;
+    g: number;
+    b: number,
+    a?: number;
+}
+
 /**
  * A palette for a BSB chart.
  */
@@ -12,7 +24,7 @@ export interface BsbPalette {
      * @param index The (1-based) index of a color within the palette.
      * @returns A color in RGBA notation.
      */
-    readonly [index: number]: { r: number; g: number; b: number, a?: number };
+    readonly [index: number]: BsbColor;
 }
 
 /**
@@ -35,6 +47,7 @@ export interface BsbSize {
  * Metadata related to a BSB chart, as parsed from its text segment.
  */
 export interface BsbMetadata {
+    readonly border?: BsbCoordinate[];
 
     /**
      * The primary palette of the chart.
@@ -47,51 +60,90 @@ export interface BsbMetadata {
     readonly size?: BsbSize;
 }
 
-function parseSize(entry: BsbTextEntry, metadata: BsbMetadata): BsbMetadata {
-    const regex = /RA=(?<width>\d+),(?<height>\d+)/;
+function parseBorder(entries: BsbTextEntry[], metadata: BsbMetadata): BsbMetadata {
+    const regex = /(?<order>\d+),(?<latitude>[-+]?(\d*\.?\d+|\d+)),(?<longitude>[-+]?(\d*\.?\d+|\d+))/;
 
-    for (let line of entry.lines) {
-        const match = regex.exec(line);
+    const coordinates: { order: number, coordinate: BsbCoordinate }[] = [];
 
-        if (match) {
-            return {
-                ...metadata,
-                size: {
-                    height: parseInt(match.groups!['height'], 10),
-                    width: parseInt(match.groups!['width'], 10)
-                }
-            };
+    for (let entry of entries) {
+        for (let line of entry.lines) {
+            const match = regex.exec(line);
+
+            if (match) {
+                const order = parseInt(match.groups!['order'], 10);
+                const latitude = parseFloat(match.groups!['latitude']);
+                const longitude = parseFloat(match.groups!['longitude']);
+
+                coordinates.push({ order, coordinate: { latitude, longitude }});
+            }
         }
     }
 
-    return metadata;
-}
-
-export function parsePalette(entry: BsbTextEntry, metadata: BsbMetadata): BsbMetadata {
-    const regex = /^(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)$/;
-
-    const match = regex.exec(entry.lines[0]);
-    
-    if (match) {
-        const index = parseInt(match.groups!['index'], 10);
-        const r = parseInt(match.groups!['r'], 10);
-        const g = parseInt(match.groups!['g'], 10);
-        const b = parseInt(match.groups!['b'], 10);
-
+    if (coordinates.length) {
         return {
             ...metadata,
-            palette: {
-                ...metadata.palette,
-                [index]: {r, g, b}
-            }
+            border: coordinates.map(coordinate => coordinate.coordinate)
         };
     }
 
     return metadata;
 }
 
-const typeParsers: { [key:string]: (entry: BsbTextEntry, metadata: BsbMetadata) => BsbMetadata } = {
+function parseSize(entries: BsbTextEntry[], metadata: BsbMetadata): BsbMetadata {
+    const regex = /RA=(?<width>\d+),(?<height>\d+)/;
+
+    for (let entry of entries) {
+        for (let line of entry.lines) {
+            const match = regex.exec(line);
+
+            if (match) {
+                return {
+                    ...metadata,
+                    size: {
+                        height: parseInt(match.groups!['height'], 10),
+                        width: parseInt(match.groups!['width'], 10)
+                    }
+                };
+            }
+        }
+    }
+
+    return metadata;
+}
+
+export function parsePalette(entries: BsbTextEntry[], metadata: BsbMetadata): BsbMetadata {
+    const regex = /^(?<index>\d+),(?<r>\d+),(?<g>\d+),(?<b>\d+)$/;
+
+    const palette: { [key: number]: BsbColor } = {};
+
+    for (let entry of entries) {
+        for (let line of entry.lines) {
+            const match = regex.exec(entry.lines[0]);
+    
+            if (match) {
+                const index = parseInt(match.groups!['index'], 10);
+                const r = parseInt(match.groups!['r'], 10);
+                const g = parseInt(match.groups!['g'], 10);
+                const b = parseInt(match.groups!['b'], 10);
+        
+                palette[index] = {r, g, b};
+            }
+        }
+    }
+
+    if (Object.keys(palette).length) {
+        return {
+            ...metadata,
+            palette
+        };
+    }
+
+    return metadata;
+}
+
+const typeParsers: { [key:string]: (entries: BsbTextEntry[], metadata: BsbMetadata) => BsbMetadata } = {
     BSB: parseSize,
+    PLY: parseBorder,
     RGB: parsePalette
 };
 
@@ -103,11 +155,23 @@ const typeParsers: { [key:string]: (entry: BsbTextEntry, metadata: BsbMetadata) 
 export function parseMetadata(textSegment: BsbTextEntry[]): BsbMetadata {
     let metadata: BsbMetadata = {};
 
-    for (let entry of textSegment) {
-        const parser = typeParsers[entry.entryType];
+    const typeEntries = textSegment.reduce<{ [key: string]: BsbTextEntry[] }>(
+        (previous, current) => {
+            const types = previous[current.entryType] ?? [];
 
-        if (parser) {
-            metadata = parser(entry, metadata);
+            types.push(current);
+
+            previous[current.entryType] = types;
+
+            return previous;
+        },
+        {});
+
+    for (let type in typeEntries) {
+        const typeParser = typeParsers[type];
+
+        if (typeParser) {
+            metadata = typeParser(typeEntries[type], metadata);
         }
     }
 
