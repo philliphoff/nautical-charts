@@ -82,7 +82,7 @@ function parseBorder(entries: BsbTextEntry[], metadata: BsbMetadata): BsbMetadat
     if (coordinates.length) {
         return {
             ...metadata,
-            border: coordinates.map(coordinate => coordinate.coordinate)
+            border: coordinates.sort((a, b) => a.order - b.order).map(coordinate => coordinate.coordinate)
         };
     }
 
