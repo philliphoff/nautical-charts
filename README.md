@@ -1,5 +1,6 @@
 # nautical-charts
 
+[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/philliphoff/nautical-charts)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/philliphoff/nautical-charts/CI)
 ![npm](https://img.shields.io/npm/v/nautical-charts)
 ![GitHub](https://img.shields.io/github/license/philliphoff/nautical-charts)
