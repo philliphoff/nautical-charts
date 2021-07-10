@@ -27,6 +27,13 @@ export interface BsbPalette {
     readonly [index: number]: BsbColor;
 }
 
+export interface BsbRecord {
+    fileName: string;
+    name: string;
+    number: number;
+    type: string;
+}
+
 /**
  * The size of the BSB chart.
  */
@@ -53,7 +60,9 @@ export interface BsbMetadata {
      * The primary palette of the chart.
      */
     readonly palette?: BsbPalette;
-    
+
+    readonly records?: BsbRecord[];
+
     /**
      * The size of the chart.
      */
@@ -141,11 +150,17 @@ export function parsePalette(entries: BsbTextEntry[], metadata: BsbMetadata): Bs
     return metadata;
 }
 
-const typeParsers: { [key:string]: (entries: BsbTextEntry[], metadata: BsbMetadata) => BsbMetadata } = {
-    BSB: parseSize,
-    PLY: parseBorder,
-    RGB: parsePalette
+type TextEntryParser = (entries: BsbTextEntry[], metadata: BsbMetadata) => BsbMetadata;
+type TextEntryParserEntry = {
+    test: RegExp;
+    parser: TextEntryParser;
 };
+
+const textEntryParsers: TextEntryParserEntry[] = [
+    { test: /^BSB$/, parser: parseSize },
+    { test: /^PLY$/, parser: parseBorder },
+    { test: /^RGB$/, parser: parsePalette },
+]
 
 /**
  * Parses the text segment of a BSB chart and returns well-known metadata, if present.
@@ -155,24 +170,24 @@ const typeParsers: { [key:string]: (entries: BsbTextEntry[], metadata: BsbMetada
 export function parseMetadata(textSegment: BsbTextEntry[]): BsbMetadata {
     let metadata: BsbMetadata = {};
 
-    const typeEntries = textSegment.reduce<{ [key: string]: BsbTextEntry[] }>(
-        (previous, current) => {
-            const types = previous[current.entryType] ?? [];
+    const entryMap = new Map<TextEntryParserEntry, BsbTextEntry[]>();
 
-            types.push(current);
+    for (const entry of textSegment) {
+        for (const test of textEntryParsers) {
+            if (test.test.test(entry.entryType)) {
+                const entries = entryMap.get(test);
 
-            previous[current.entryType] = types;
-
-            return previous;
-        },
-        {});
-
-    for (let type in typeEntries) {
-        const typeParser = typeParsers[type];
-
-        if (typeParser) {
-            metadata = typeParser(typeEntries[type], metadata);
+                if(entries) {
+                    entries.push(entry);
+                } else {
+                    entryMap.set(test, [entry]);
+                }
+            }
         }
+    }
+
+    for (const test of entryMap.keys()) {
+        metadata = test.parser(entryMap.get(test)!, metadata);
     }
 
     return metadata;

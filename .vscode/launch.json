@@ -23,6 +23,19 @@
                 "${workspaceFolder/dist/**/*.js",
                 "${workspaceFolder}/sample/dist/**/*.js"
             ]
-        }
+        },
+        {
+            "name": "Debug Jest Tests",
+            "type": "pwa-node",
+            "request": "launch",
+            "runtimeArgs": [
+              "--inspect-brk",
+              "${workspaceRoot}/node_modules/.bin/jest",
+              "--runInBand"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "port": 9229
+          }
     ]
 }
